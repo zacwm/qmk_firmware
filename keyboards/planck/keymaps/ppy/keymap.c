@@ -29,6 +29,7 @@ enum planck_layers {
 enum planck_keycodes {
   QWERTY = VIM_SAFE_RANGE,
   BACKLIT,
+  DEL_WORD,
 };
 
 #define LOWER MO(_LOWER)
@@ -36,6 +37,7 @@ enum planck_keycodes {
 #define CTRL_ESC MT(MOD_LCTL, KC_ESC)
 #define SFT_ENT MT(MOD_RSFT, KC_ENT)
 #define RAISE_BS LT(RAISE, KC_BSLS)
+#define VIM_BS LT(MO(_VIM), KC_BSLS)
 
 uint8_t vim_cmd_layer(void) {
     return _VIM;
@@ -47,7 +49,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
     CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
     KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, SFT_ENT,
-    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE_BS,VIM_START, KC_DOWN, KC_UP,   KC_RGHT
+    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  VIM_BS,  RAISE_BS,KC_DOWN, KC_UP,   KC_RGHT
 ),
 
 [_LOWER] = LAYOUT_planck_grid(
@@ -58,7 +60,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 [_RAISE] = LAYOUT_planck_grid(
-    KC_TILD, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10, KC_BSPC,
+    KC_TILD, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10, _______,
     KC_DEL,  KC_F11,  KC_F12,  _______, _______, _______, KC_LEFT, KC_DOWN,  KC_UP,  KC_RGHT,KC_6,    KC_PLUS,
     _______, _______, _______, _______, _______, _______, _______, _______,  KC_1,   KC_2,   KC_3,    _______,
     _______, _______, _______, _______, _______, _______, _______, _______,  _______,KC_DOT, KC_EQL,  KC_MPLY
@@ -72,7 +74,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 [_VIM] = LAYOUT_planck_grid(
-    _______, _______, VIM_W,   VIM_E,   _______, _______, VIM_Y,   VIM_U,   VIM_I,    VIM_O,   VIM_P,   _______,
+    _______, _______, VIM_W,   VIM_E,   _______, _______, VIM_Y,   VIM_U,   VIM_I,    VIM_O,   VIM_P,   DEL_WORD,
     VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,    VIM_L,   _______, _______,
     VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______,_______,VIM_COMMA,VIM_PERIOD,_______,VIM_SHIFT,
     _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,TO(_QWERTY)
@@ -97,6 +99,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_single_persistent_default_layer(_QWERTY);
       }
       return false;
+      break;
+    case DEL_WORD:
+      if (record->event.pressed) {
+          register_code(KC_LALT);
+          tap_code16(KC_BSPC);
+          unregister_code(KC_LALT);
+      }
       break;
     case BACKLIT:
       if (record->event.pressed) {
