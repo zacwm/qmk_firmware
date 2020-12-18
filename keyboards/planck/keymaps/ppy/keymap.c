@@ -15,16 +15,19 @@
  */
 
 #include QMK_KEYBOARD_H
+#include "xtonhasvim.h"
 
 enum planck_layers {
   _QWERTY,
   _LOWER,
   _RAISE,
-  _ADJUST
+  _ADJUST,
+  _VIM,
+  _VINSERT
 };
 
 enum planck_keycodes {
-  QWERTY = SAFE_RANGE,
+  QWERTY = VIM_SAFE_RANGE,
   BACKLIT,
 };
 
@@ -34,13 +37,17 @@ enum planck_keycodes {
 #define SFT_ENT MT(MOD_RSFT, KC_ENT)
 #define RAISE_BS LT(RAISE, KC_BSLS)
 
+uint8_t vim_cmd_layer(void) {
+    return _VIM;
+}
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 [_QWERTY] = LAYOUT_planck_grid(
     KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
     CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
     KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, SFT_ENT,
-    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE_BS,KC_RGUI, KC_DOWN, KC_UP,   KC_RGHT
+    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE_BS,VIM_START, KC_DOWN, KC_UP,   KC_RGHT
 ),
 
 [_LOWER] = LAYOUT_planck_grid(
@@ -62,15 +69,28 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     _______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, KC_LEFT, KC_DOWN, KC_UP,    KC_RGHT, _______, _______,
     _______, _______, _______, _______, _______, _______, _______, AG_NORM, _______,  _______, _______, _______,
     _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______
+),
+
+[_VIM] = LAYOUT_planck_grid(
+    _______, _______, VIM_W,   VIM_E,   _______, _______, VIM_Y,   VIM_U,   VIM_I,    VIM_O,   VIM_P,   _______,
+    VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,    VIM_L,   _______, _______,
+    VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______,_______,VIM_COMMA,VIM_PERIOD,_______,VIM_SHIFT,
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,TO(_QWERTY)
+),
+
+[_VINSERT] = LAYOUT_planck_grid(
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+    VIM_START,_______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,TO(_QWERTY)
 )
 
 };
 
-layer_state_t layer_state_set_user(layer_state_t state) {
-  return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
-}
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+  if(!process_record_vimlayer(keycode, record)) return false;
+
   switch (keycode) {
     case QWERTY:
       if (record->event.pressed) {
@@ -97,6 +117,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       break;
   }
   return true;
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }
 
 void dip_switch_update_user(uint8_t index, bool active) {
