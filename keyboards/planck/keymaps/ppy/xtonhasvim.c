@@ -30,9 +30,22 @@ static bool SHIFTED = false;
 static uint32_t mod_override_layer_state = 0;
 static uint16_t mod_override_triggering_key = 0;
 
-static void edit(void) { vstate = VIM_START; layer_clear(); }
+float song_vim_on[][2] = SONG(S__NOTE(_E7));
+float song_vim_off[][2] = SONG(S__NOTE(_A6));
+
+static void edit(void) {
+    vstate = VIM_START;
+    layer_move(_VINSERT);
+}
 #define EDIT edit()
 
+static void reset_vim_state(void) {
+    vstate = VIM_START;
+    yank_was_lines = false;
+    SHIFTED = false;
+    mod_override_layer_state = 0;
+    mod_override_triggering_key = 0;
+}
 
 static void simple_movement(uint16_t keycode) {
   switch(keycode) {
@@ -66,9 +79,8 @@ static void simple_movement(uint16_t keycode) {
     case VIM_W:
       register_code(KC_LALT);
       tap_code16(LSFT(KC_RIGHT)); // select to end of this word
-      tap_code16(LSFT(KC_RIGHT)); // select to end of next word
-      tap_code16(LSFT(KC_LEFT));  // select to start of next word
       unregister_code(KC_LALT);
+      tap_code16(KC_RIGHT); // select to end of next word
       break;
   }
 }
@@ -95,7 +107,6 @@ static void comma_period(uint16_t keycode) {
 
 
 bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
-
   /****** mod passthru *****/
   if(record->event.pressed && layer_state_is(vim_cmd_layer()) && (IS_MOD(keycode) || keycode == LSFT(KC_LALT))) {
     mod_override_layer_state = layer_state;
@@ -104,6 +115,7 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
     layer_clear();
     return true; // let the event fall through...
   }
+
   if(mod_override_layer_state && !record->event.pressed && keycode == mod_override_triggering_key) {
     layer_state_set(mod_override_layer_state);
     mod_override_layer_state = 0;
@@ -118,19 +130,23 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
     }
 
     if (record->event.pressed) {
-      if(keycode == VIM_START) {
-        // entry from anywhere
-        /* layer_on(vim_cmd_layer()); */
-        vstate = VIM_START;
+      if(keycode == VIM_START || keycode == VIM_END) {
+        reset_vim_state();
 
-        // reset state
-        yank_was_lines = false;
-        SHIFTED = false;
-        mod_override_layer_state = 0;
-        mod_override_triggering_key = 0;
+        if (keycode == VIM_END) {
+            layer_clear();
+            PLAY_SONG(song_vim_off);
+        }
+        else
+        {
+            if (IS_LAYER_OFF(_VINSERT))
+                PLAY_SONG(song_vim_on);
+            layer_move(vim_cmd_layer());
+        }
 
         return false;
       }
+
       switch(vstate) {
         case VIM_START:
           switch(keycode){
@@ -265,24 +281,29 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
               }
               break;
             case VIM_W:
-              register_code(KC_LALT);
-                tap_code(KC_RIGHT);
-                tap_code(KC_RIGHT);
-                tap_code(KC_LEFT);
-              unregister_code(KC_LALT);
+              tap_code16(LALT(KC_RIGHT)); // select to end of this word
+              tap_code16(KC_RIGHT); // select to end of next word
               break;
             case VIM_X:
               // tap_code16(LSFT(KC_RIGHT));
               // tap_code16(LGUI(KC_X));
               register_code(KC_DEL);
               break;
+            case VIM_R:
+              if(SHIFTED) {
+                tap_code16(LCTL(KC_E));
+              }
+              break;
             case VIM_Y:
               if(SHIFTED) {
-                tap_code16(LGUI(KC_LEFT));
-                tap_code16(LSFT(KC_DOWN));
-                tap_code16(LGUI(KC_C));
-                tap_code(KC_RIGHT);
-                yank_was_lines = true;
+                // assume this is ^ for now...
+                tap_code16(LCTL(KC_A));
+
+                /* tap_code16(LGUI(KC_LEFT)); */
+                /* tap_code16(LSFT(KC_DOWN)); */
+                /* tap_code16(LGUI(KC_C)); */
+                /* tap_code(KC_RIGHT); */
+                /* yank_was_lines = true; */
               } else {
                 vstate = VIM_Y;
               }
