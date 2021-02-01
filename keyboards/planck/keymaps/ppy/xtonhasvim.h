@@ -21,6 +21,7 @@
 
 enum xtonhasvim_keycodes {
   VIM_START = SAFE_RANGE,  // bookend for vim states
+  VIM_END,
   VIM_A,
   VIM_B,
   VIM_C,
@@ -36,6 +37,7 @@ enum xtonhasvim_keycodes {
   VIM_L,
   VIM_O,
   VIM_P,
+  VIM_R,
   VIM_S,
   VIM_U,
   VIM_V,
