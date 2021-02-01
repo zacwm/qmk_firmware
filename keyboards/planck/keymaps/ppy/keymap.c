@@ -29,15 +29,14 @@ enum planck_layers {
 enum planck_keycodes {
   QWERTY = VIM_SAFE_RANGE,
   BACKLIT,
-  DEL_WORD,
+  CTRL_ESC
 };
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
-#define CTRL_ESC MT(MOD_LCTL, KC_ESC)
 #define SFT_ENT MT(MOD_RSFT, KC_ENT)
 #define RAISE_BS LT(RAISE, KC_QUOT)
-#define VIM_BS LT(MO(_VIM), KC_QUOT)
+#define RAISE_VIM LT(RAISE, KC_QUOT)
 
 uint8_t vim_cmd_layer(void) {
     return _VIM;
@@ -49,7 +48,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
     CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
     KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_ENT,
-    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  VIM_START,RAISE_BS,KC_DOWN, KC_UP,   KC_RGHT
+    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE_BS,VIM_START,_______,KC_UP,   KC_RGHT
 ),
 
 [_LOWER] = LAYOUT_planck_grid(
@@ -60,7 +59,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 [_RAISE] = LAYOUT_planck_grid(
-    KC_TILD, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10, _______,
+    KC_TILD, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10, KC_BSPC,
     KC_DEL,  KC_F11,  KC_F12,  _______, _______, _______, KC_LEFT, KC_DOWN,  KC_UP,  KC_RGHT,KC_6,    KC_PLUS,
     _______, _______, _______, _______, _______, _______, _______, _______,  KC_1,   KC_2,   KC_3,    _______,
     _______, _______, _______, _______, _______, _______, _______, _______,  _______,KC_DOT, KC_EQL,  KC_MPLY
@@ -87,11 +86,28 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 };
 
+static bool ctrl_esc_consumed;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
-  if(!process_record_vimlayer(keycode, record)) return false;
-
   switch (keycode) {
+      case CTRL_ESC:
+          if (record->event.pressed) {
+              register_code(KC_LCTL);
+              ctrl_esc_consumed = false;
+          }
+          else
+          {
+              unregister_code(KC_LCTL);
+              if (!ctrl_esc_consumed)
+              {
+                  if (IS_LAYER_ON(_VINSERT))
+                      layer_move(_VIM);
+                  else
+                      tap_code16(KC_ESC);
+              }
+          }
+          return false;
       case KC_BSPC:
           if (record->event.pressed) {
               if (get_mods() & MOD_BIT(KC_LCTL))
@@ -115,13 +131,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
       break;
-    case DEL_WORD:
-      if (record->event.pressed) {
-          register_code(KC_LALT);
-          tap_code16(KC_BSPC);
-          unregister_code(KC_LALT);
-      }
-      break;
     case BACKLIT:
       if (record->event.pressed) {
         register_code(KC_RSFT);
@@ -140,6 +149,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
       break;
   }
+
+  ctrl_esc_consumed = true;
+
+  if(!process_record_vimlayer(keycode, record)) return false;
+
   return true;
 }
 
