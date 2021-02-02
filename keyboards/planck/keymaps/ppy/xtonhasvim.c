@@ -105,8 +105,25 @@ static void comma_period(uint16_t keycode) {
   }
 }
 
-
 bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
+    // global toggle logic.
+    if (record->event.pressed)
+    {
+        if (keycode == VIM_START) {
+            reset_vim_state();
+            PLAY_SONG(song_vim_on);
+            layer_move(vim_cmd_layer());
+            return false;
+        }
+
+        if ((IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT)) && keycode == KC_MEH)
+        {
+            layer_clear();
+            PLAY_SONG(song_vim_off);
+            return false;
+        }
+    }
+
   /****** mod passthru *****/
   if(record->event.pressed && layer_state_is(vim_cmd_layer()) && (IS_MOD(keycode) || keycode == LSFT(KC_LALT))) {
     mod_override_layer_state = layer_state;
@@ -130,23 +147,6 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
     }
 
     if (record->event.pressed) {
-      if(keycode == VIM_START || keycode == VIM_END) {
-        reset_vim_state();
-
-        if (keycode == VIM_END) {
-            layer_clear();
-            PLAY_SONG(song_vim_off);
-        }
-        else
-        {
-            if (IS_LAYER_OFF(_VINSERT))
-                PLAY_SONG(song_vim_on);
-            layer_move(vim_cmd_layer());
-        }
-
-        return false;
-      }
-
       switch(vstate) {
         case VIM_START:
           switch(keycode){
