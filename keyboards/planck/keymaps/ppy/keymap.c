@@ -48,7 +48,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
     CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
     KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_ENT,
-    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE_BS,VIM_START,_______,KC_UP,   KC_RGHT
+    KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE,   VIM_START,_______,KC_UP,   KC_RGHT
 ),
 
 [_LOWER] = LAYOUT_planck_grid(
@@ -76,13 +76,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     _______, _______, VIM_W,   VIM_E,   VIM_R, _______, VIM_Y,   VIM_U,   VIM_I,    VIM_O,   VIM_P,   _______,
     VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,    VIM_L,   _______, _______,
     VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______,_______,VIM_COMMA,VIM_PERIOD,_______,_______,
-    _______, _______, _______, _______, _______, _______, _______, _______, VIM_END, _______, _______,_______),
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,_______),
 
 [_VINSERT] = LAYOUT_planck_grid(
     _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
     _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
     _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______, _______, _______, _______, _______, _______, _______, _______, VIM_END, _______, _______,_______)
+    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,_______)
 
 };
 
@@ -108,6 +108,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
               }
           }
           return false;
+  }
+
+  ctrl_esc_consumed = true;
+
+  switch (keycode) {
       case KC_BSPC:
           if (record->event.pressed) {
               if (get_mods() & MOD_BIT(KC_LCTL))
@@ -149,8 +154,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
       break;
   }
-
-  ctrl_esc_consumed = true;
 
   if(!process_record_vimlayer(keycode, record)) return false;
 
