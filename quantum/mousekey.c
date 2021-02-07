@@ -319,43 +319,40 @@ static x11_t wheel = MK_X11_WHEEL;
 
 #endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
 
-#if MK_TYPE(MK_TYPE_X11)
+#if MK_KIND(MK_TYPE_X11)
 
-static uint8_t move_unit(void) {
-    uint16_t unit;
+static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
     if (mousekey_accel & (1 << 0)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 4;
+#    if MK_TYPE(MK_TYPE_X11)
+        return (delta * what->max_speed) / 4;
+#    elif MK_TYPE(MK_TYPE_X11_COMBINED)
+        return 1;
+#    endif
     } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 2;
+        return (delta * what->max_speed) / 2;
     } else if (mousekey_accel & (1 << 2)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed);
-    } else if (mouse_axes.repeat == 0) {
-        unit = MOUSEKEY_MOVE_DELTA;
-    } else if (mouse_axes.repeat >= mouse.time_to_max) {
-        unit = MOUSEKEY_MOVE_DELTA * mouse.max_speed;
+#    if MK_TYPE(MK_TYPE_X11)
+        return (delta * what->max_speed);
+#    elif MK_TYPE(MK_TYPE_X11_COMBINED)
+        return UINT16_MAX; /* will be clamp()'d */
+#    endif
+    } else if (repeat == 0) {
+        return delta;
+    } else if (repeat >= what->time_to_max) {
+        return delta * what->max_speed;
     } else {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed * mouse_axes.repeat) / mouse.time_to_max;
+        return (delta * what->max_speed * repeat) / what->time_to_max;
     }
-    return (unit > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (unit == 0 ? 1 : unit));
 }
 
-static uint8_t wheel_unit(void) {
-    uint16_t unit;
-    if (mousekey_accel & (1 << 0)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 4;
-    } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 2;
-    } else if (mousekey_accel & (1 << 2)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed);
-    } else if (wheel_axes.repeat == 0) {
-        unit = MOUSEKEY_WHEEL_DELTA;
-    } else if (wheel_axes.repeat >= wheel.time_to_max) {
-        unit = MOUSEKEY_WHEEL_DELTA * wheel.max_speed;
-    } else {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed * wheel_axes.repeat) / wheel.time_to_max;
-    }
-    return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
+static inline uint8_t clamp(uint8_t n, uint8_t min, uint8_t max) {
+    if (n < min) return min;
+    if (n > max) return max;
+    return n;
 }
+
+#    define move_unit() clamp(x11_unit(&mouse, mouse_axes.repeat, MOUSEKEY_MOVE_DELTA), 1, MOUSEKEY_MOVE_MAX)
+#    define wheel_unit() clamp(x11_unit(&wheel, wheel_axes.repeat, MOUSEKEY_WHEEL_DELTA), 1, MOUSEKEY_WHEEL_MAX)
 
 #elif MK_KIND(MK_TYPE_KINETIC)
 
@@ -410,45 +407,7 @@ static uint8_t wheel_unit(void) {
     return 1; /* XXX: wat. */
 }
 
-#elif MK_TYPE(MK_TYPE_X11_COMBINED)
-
-static uint8_t move_unit(void) {
-    uint16_t unit;
-    if (mousekey_accel & (1 << 0)) {
-        unit = 1;
-    } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 2;
-    } else if (mousekey_accel & (1 << 2)) {
-        unit = MOUSEKEY_MOVE_MAX;
-    } else if (mouse_axes.repeat == 0) {
-        unit = MOUSEKEY_MOVE_DELTA;
-    } else if (mouse_axes.repeat >= mouse.time_to_max) {
-        unit = MOUSEKEY_MOVE_DELTA * mouse.max_speed;
-    } else {
-        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed * mouse_axes.repeat) / mouse.time_to_max;
-    }
-    return (unit > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (unit == 0 ? 1 : unit));
-}
-
-static uint8_t wheel_unit(void) {
-    uint16_t unit;
-    if (mousekey_accel & (1 << 0)) {
-        unit = 1;
-    } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 2;
-    } else if (mousekey_accel & (1 << 2)) {
-        unit = MOUSEKEY_WHEEL_MAX;
-    } else if (mouse_axes.repeat == 0) {
-        unit = MOUSEKEY_WHEEL_DELTA;
-    } else if (mouse_axes.repeat >= wheel.time_to_max) {
-        unit = MOUSEKEY_WHEEL_DELTA * wheel.max_speed;
-    } else {
-        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed * mouse_axes.repeat) / wheel.time_to_max;
-    }
-    return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
-}
-
-#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC || MK_TYPE_X11_COMBINED */
+#endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC) */
 
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
 
