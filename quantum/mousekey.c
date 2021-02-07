@@ -278,23 +278,40 @@ static uint8_t mousekey_wheel_repeat = 0;
  *
  *  speed = delta * max_speed * (repeat / time_to_max)**((1000+curve)/1000)
  */
-/* milliseconds between the initial key press and first repeated motion event (0-2550) */
-uint8_t mk_delay = MOUSEKEY_DELAY / 10;
-/* milliseconds between repeated motion events (0-255) */
-uint8_t mk_interval = MOUSEKEY_INTERVAL;
-/* steady speed (in action_delta units) applied each event (0-255) */
-uint8_t mk_max_speed = MOUSEKEY_MAX_SPEED;
-/* number of events (count) accelerating to steady speed (0-255) */
-uint8_t mk_time_to_max = MOUSEKEY_TIME_TO_MAX;
-/* ramp used to reach maximum pointer speed (NOT SUPPORTED) */
-// int8_t mk_curve = 0;
-/* wheel params */
-/* milliseconds between the initial key press and first repeated motion event (0-2550) */
-uint8_t mk_wheel_delay = MOUSEKEY_WHEEL_DELAY / 10;
-/* milliseconds between repeated motion events (0-255) */
-uint8_t mk_wheel_interval    = MOUSEKEY_WHEEL_INTERVAL;
-uint8_t mk_wheel_max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
-uint8_t mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
+typedef struct {
+    /* milliseconds between the initial key press and first repeated motion event (0-2550) */
+    uint8_t delay;
+    /* milliseconds between repeated motion events (0-255) */
+    uint8_t interval;
+    /* steady speed (in action_delta units) applied each event (0-255) */
+    uint8_t max_speed;
+    /* number of events (count) accelerating to steady speed (0-255) */
+    uint8_t time_to_max;
+    /* ramp used to reach maximum pointer speed */
+    /* XXX: NOT IMPLEMENTED */
+    /* int8_t curve = 0; */
+} x11_t;
+
+#    ifndef MK_X11_MOUSE
+#        define MK_X11_MOUSE /* clang-format off */ { \
+             .delay       = MOUSEKEY_DELAY / 10, \
+             .interval    = MOUSEKEY_INTERVAL, \
+             .max_speed   = MOUSEKEY_MAX_SPEED, \
+             .time_to_max = MOUSEKEY_TIME_TO_MAX \
+         } /* clang-format on */
+#    endif
+
+#    ifndef MK_X11_WHEEL
+#        define MK_X11_WHEEL /* clang-format off */ { \
+             .delay       = MOUSEKEY_WHEEL_DELAY / 10, \
+             .interval    = MOUSEKEY_WHEEL_INTERVAL, \
+             .max_speed   = MOUSEKEY_WHEEL_MAX_SPEED, \
+             .time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX \
+         } /* clang-format on */
+#    endif
+
+static x11_t mouse = MK_X11_MOUSE;
+static x11_t wheel = MK_X11_WHEEL;
 
 #endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
 
@@ -303,17 +320,17 @@ uint8_t mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
 static uint8_t move_unit(void) {
     uint16_t unit;
     if (mousekey_accel & (1 << 0)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed) / 4;
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 4;
     } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed) / 2;
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 2;
     } else if (mousekey_accel & (1 << 2)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed);
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed);
     } else if (mousekey_repeat == 0) {
         unit = MOUSEKEY_MOVE_DELTA;
-    } else if (mousekey_repeat >= mk_time_to_max) {
-        unit = MOUSEKEY_MOVE_DELTA * mk_max_speed;
+    } else if (mousekey_repeat >= mouse.time_to_max) {
+        unit = MOUSEKEY_MOVE_DELTA * mouse.max_speed;
     } else {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed * mousekey_repeat) / mk_time_to_max;
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed * mousekey_repeat) / mouse.time_to_max;
     }
     return (unit > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (unit == 0 ? 1 : unit));
 }
@@ -321,17 +338,17 @@ static uint8_t move_unit(void) {
 static uint8_t wheel_unit(void) {
     uint16_t unit;
     if (mousekey_accel & (1 << 0)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed) / 4;
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 4;
     } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed) / 2;
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 2;
     } else if (mousekey_accel & (1 << 2)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed);
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed);
     } else if (mousekey_wheel_repeat == 0) {
         unit = MOUSEKEY_WHEEL_DELTA;
-    } else if (mousekey_wheel_repeat >= mk_wheel_time_to_max) {
-        unit = MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed;
+    } else if (mousekey_wheel_repeat >= wheel.time_to_max) {
+        unit = MOUSEKEY_WHEEL_DELTA * wheel.max_speed;
     } else {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed * mousekey_wheel_repeat) / mk_wheel_time_to_max;
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed * mousekey_wheel_repeat) / wheel.time_to_max;
     }
     return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
 }
@@ -362,7 +379,7 @@ static uint8_t move_unit(void) {
     }
 
     /* convert speed to USB mouse speed 1 to 127 */
-    speed = (uint8_t)(speed / (1000.0f / mk_interval));
+    speed = (uint8_t)(speed / (1000.0f / mouse.interval));
     speed = speed < 1 ? 1 : speed;
 
     return speed > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : speed;
@@ -396,15 +413,15 @@ static uint8_t move_unit(void) {
     if (mousekey_accel & (1 << 0)) {
         unit = 1;
     } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed) / 2;
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed) / 2;
     } else if (mousekey_accel & (1 << 2)) {
         unit = MOUSEKEY_MOVE_MAX;
     } else if (mousekey_repeat == 0) {
         unit = MOUSEKEY_MOVE_DELTA;
-    } else if (mousekey_repeat >= mk_time_to_max) {
-        unit = MOUSEKEY_MOVE_DELTA * mk_max_speed;
+    } else if (mousekey_repeat >= mouse.time_to_max) {
+        unit = MOUSEKEY_MOVE_DELTA * mouse.max_speed;
     } else {
-        unit = (MOUSEKEY_MOVE_DELTA * mk_max_speed * mousekey_repeat) / mk_time_to_max;
+        unit = (MOUSEKEY_MOVE_DELTA * mouse.max_speed * mousekey_repeat) / mouse.time_to_max;
     }
     return (unit > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (unit == 0 ? 1 : unit));
 }
@@ -414,15 +431,15 @@ static uint8_t wheel_unit(void) {
     if (mousekey_accel & (1 << 0)) {
         unit = 1;
     } else if (mousekey_accel & (1 << 1)) {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed) / 2;
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed) / 2;
     } else if (mousekey_accel & (1 << 2)) {
         unit = MOUSEKEY_WHEEL_MAX;
     } else if (mousekey_repeat == 0) {
         unit = MOUSEKEY_WHEEL_DELTA;
-    } else if (mousekey_repeat >= mk_wheel_time_to_max) {
-        unit = MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed;
+    } else if (mousekey_repeat >= wheel.time_to_max) {
+        unit = MOUSEKEY_WHEEL_DELTA * wheel.max_speed;
     } else {
-        unit = (MOUSEKEY_WHEEL_DELTA * mk_wheel_max_speed * mousekey_repeat) / mk_wheel_time_to_max;
+        unit = (MOUSEKEY_WHEEL_DELTA * wheel.max_speed * mousekey_repeat) / wheel.time_to_max;
     }
     return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
 }
@@ -440,7 +457,7 @@ void mousekey_task(void) {
     mouse_report.v = 0;
     mouse_report.h = 0;
 
-    if ((tmpmr.x || tmpmr.y) && timer_elapsed(last_timer_c) > (mousekey_repeat ? mk_interval : mk_delay * 10)) {
+    if ((tmpmr.x || tmpmr.y) && timer_elapsed(last_timer_c) > (mousekey_repeat ? mouse.interval : mouse.delay * 10)) {
         if (mousekey_repeat != UINT8_MAX) mousekey_repeat++;
         if (tmpmr.x != 0) mouse_report.x = move_unit() * ((tmpmr.x > 0) ? 1 : -1);
         if (tmpmr.y != 0) mouse_report.y = move_unit() * ((tmpmr.y > 0) ? 1 : -1);
@@ -459,10 +476,10 @@ void mousekey_task(void) {
     }
 
 #if MK_KIND(MK_TYPE_KINETIC)
-    /* XXX previously we just redefined mk_wheel_interval as a float */
-    mk_wheel_interval = (uint8_t)kinetic_wheel_interval;
+    /* XXX previously we just redefined wheel.interval as a float */
+    wheel.interval = (uint8_t)kinetic_wheel_interval;
 #endif
-    if ((tmpmr.v || tmpmr.h) && timer_elapsed(last_timer_w) > (mousekey_wheel_repeat ? mk_wheel_interval : mk_wheel_delay * 10)) {
+    if ((tmpmr.v || tmpmr.h) && timer_elapsed(last_timer_w) > (mousekey_wheel_repeat ? wheel.interval : wheel.delay * 10)) {
         if (mousekey_wheel_repeat != UINT8_MAX) mousekey_wheel_repeat++;
         if (tmpmr.v != 0) mouse_report.v = wheel_unit() * ((tmpmr.v > 0) ? 1 : -1);
         if (tmpmr.h != 0) mouse_report.h = wheel_unit() * ((tmpmr.h > 0) ? 1 : -1);
@@ -738,12 +755,12 @@ static void mousekey_param_print(void) {
         "5:	wheel_max_speed: %u\n"
         "6:	wheel_time_to_max: %u\n"
 
-        , mk_delay
-        , mk_interval
-        , mk_max_speed
-        , mk_time_to_max
-        , mk_wheel_max_speed
-        , mk_wheel_time_to_max
+        , mouse.delay
+        , mouse.interval
+        , mouse.max_speed
+        , mouse.time_to_max
+        , wheel.max_speed
+        , wheel.time_to_max
 #else
         "no knobs sorry\n"
 #endif
@@ -821,12 +838,12 @@ bool mousekey_console(uint8_t code) {
 #               define PARAM(n, v) case n: pp = &(v); desc = #v; break
 
 #    if MK_KIND(MK_TYPE_X11)
-                PARAM(1, mk_delay);
-                PARAM(2, mk_interval);
-                PARAM(3, mk_max_speed);
-                PARAM(4, mk_time_to_max);
-                PARAM(5, mk_wheel_max_speed);
-                PARAM(6, mk_wheel_time_to_max);
+                PARAM(1, mouse.delay);
+                PARAM(2, mouse.interval);
+                PARAM(3, mouse.max_speed);
+                PARAM(4, mouse.time_to_max);
+                PARAM(5, wheel.max_speed);
+                PARAM(6, wheel.time_to_max);
 #    endif /* MK_TYPE_X11 */
 
 #               undef PARAM /* clang-format on */
@@ -848,12 +865,12 @@ bool mousekey_console(uint8_t code) {
         case KC_D:
 
 #    if MK_KIND(MK_TYPE_X11)
-            mk_delay             = MOUSEKEY_DELAY / 10;
-            mk_interval          = MOUSEKEY_INTERVAL;
-            mk_max_speed         = MOUSEKEY_MAX_SPEED;
-            mk_time_to_max       = MOUSEKEY_TIME_TO_MAX;
-            mk_wheel_max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
-            mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
+            mouse.delay       = MOUSEKEY_DELAY / 10;
+            mouse.interval    = MOUSEKEY_INTERVAL;
+            mouse.max_speed   = MOUSEKEY_MAX_SPEED;
+            mouse.time_to_max = MOUSEKEY_TIME_TO_MAX;
+            wheel.max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
+            wheel.time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
 #    endif /* MK_TYPE_X11 */
 
             print("defaults\n");
