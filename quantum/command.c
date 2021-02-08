@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    include "backlight.h"
 #endif
 
-#if defined(MOUSEKEY_ENABLE) && !defined(MK_3_SPEED)
+#if defined(MOUSEKEY_ENABLE)
 #    include "mousekey.h"
 #endif
 
@@ -53,8 +53,9 @@ static void print_version(void);
 static void print_status(void);
 static bool command_console(uint8_t code);
 static void command_console_help(void);
-#if defined(MOUSEKEY_ENABLE) && !defined(MK_3_SPEED)
-static bool mousekey_console(uint8_t code);
+#if defined(MOUSEKEY_ENABLE)
+/* We're the only caller. Shhh! Don't tell anyone. */
+extern bool mousekey_console(uint8_t code);
 #endif
 
 static void switch_default_layer(uint8_t layer);
@@ -73,9 +74,12 @@ bool command_proc(uint8_t code) {
             else
                 return (command_console_extra(code) || command_console(code));
             break;
-#if defined(MOUSEKEY_ENABLE) && !defined(MK_3_SPEED)
+#if defined(MOUSEKEY_ENABLE)
         case MOUSEKEY:
-            mousekey_console(code);
+            if (!mousekey_console(code)) {
+                command_state = CONSOLE;
+                command_console(KC_SLASH /* ? */);
+            }
             break;
 #endif
         default:
@@ -566,175 +570,6 @@ static bool command_console(uint8_t code) {
             return false;
     }
 }
-
-/***********************************************************
- * Mousekey console
- ***********************************************************/
-
-#if defined(MOUSEKEY_ENABLE)
-
-#    if !defined(NO_PRINT) && !defined(USER_PRINT)
-static void mousekey_param_print(void) {
-    xprintf(/* clang-format off */
-
-#ifndef MK_3_SPEED
-        "1:	delay(*10ms): %u\n"
-        "2:	interval(ms): %u\n"
-        "3:	max_speed: %u\n"
-        "4:	time_to_max: %u\n"
-        "5:	wheel_max_speed: %u\n"
-        "6:	wheel_time_to_max: %u\n"
-
-        , mk_delay
-        , mk_interval
-        , mk_max_speed
-        , mk_time_to_max
-        , mk_wheel_max_speed
-        , mk_wheel_time_to_max
-#else
-        "no knobs sorry\n"
-#endif
-
-    ); /* clang-format on */
-}
-#    endif /* !NO_PRINT && !USER_PRINT */
-
-#    if !defined(NO_PRINT) && !defined(USER_PRINT)
-static void mousekey_console_help(void) {
-    mousekey_param_print();
-    xprintf(/* clang-format off */
-        "p:	print values\n"
-        "d:	set defaults\n"
-        "up:	+1\n"
-        "dn:	-1\n"
-        "lt:	+10\n"
-        "rt:	-10\n"
-        "ESC/q:	quit\n"
-
-#ifndef MK_3_SPEED
-        "\n"
-        "speed = delta * max_speed * (repeat / time_to_max)\n"
-        "where delta: cursor=%d, wheel=%d\n"
-        "See http://en.wikipedia.org/wiki/Mouse_keys\n"
-        , MOUSEKEY_MOVE_DELTA, MOUSEKEY_WHEEL_DELTA
-#endif
-
-    ); /* clang-format on */
-}
-#    endif /* !NO_PRINT && !USER_PRINT */
-
-/* Only used by `quantum/command.c` / `command_proc()`. To avoid
- * any doubt: we return `false` to return to the main console,
- * which differs from the `bool` that `command_proc()` returns. */
-bool mousekey_console(uint8_t code) {
-    static uint8_t  param = 0;
-    static uint8_t *pp    = NULL;
-    static char *   desc  = NULL;
-
-#    if defined(NO_PRINT) || defined(USER_PRINT) /* -Wunused-parameter */
-    (void)desc;
-#    endif
-
-    int8_t change = 0;
-
-    switch (code) {
-        case KC_H:
-        case KC_SLASH: /* ? */
-#    if !defined(NO_PRINT) && !defined(USER_PRINT)
-            print("\n\t- Mousekey -\n");
-            mousekey_console_help();
-#    endif
-            break;
-
-        case KC_Q:
-        case KC_ESC:
-            print("q\n");
-            if (!param) return false;
-            param = 0;
-            pp    = NULL;
-            desc  = NULL;
-            break;
-
-        case KC_P:
-#    if !defined(NO_PRINT) && !defined(USER_PRINT)
-            print("\n\t- Values -\n");
-            mousekey_param_print();
-#    endif
-            break;
-
-        case KC_1 ... KC_0: /* KC_0 gives param = 10 */
-            param = 1 + code - KC_1;
-            switch (param) { /* clang-format off */
-#               define PARAM(n, v) case n: pp = &(v); desc = #v; break
-
-#ifndef MK_3_SPEED
-                PARAM(1, mk_delay);
-                PARAM(2, mk_interval);
-                PARAM(3, mk_max_speed);
-                PARAM(4, mk_time_to_max);
-                PARAM(5, mk_wheel_max_speed);
-                PARAM(6, mk_wheel_time_to_max);
-#endif /* MK_3_SPEED */
-
-#               undef PARAM
-                default:
-                    param = 0;
-                    print("?\n");
-                    break;
-            } /* clang-format on */
-            if (param) xprintf("%u\n", param);
-            break;
-
-            /* clang-format off */
-        case KC_UP:    change =  +1; break;
-        case KC_DOWN:  change =  -1; break;
-        case KC_LEFT:  change = -10; break;
-        case KC_RIGHT: change = +10; break;
-            /* clang-format on */
-
-        case KC_D:
-
-#    ifndef MK_3_SPEED
-            mk_delay             = MOUSEKEY_DELAY / 10;
-            mk_interval          = MOUSEKEY_INTERVAL;
-            mk_max_speed         = MOUSEKEY_MAX_SPEED;
-            mk_time_to_max       = MOUSEKEY_TIME_TO_MAX;
-            mk_wheel_max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
-            mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
-#    endif /* MK_3_SPEED */
-
-            print("defaults\n");
-            break;
-
-        default:
-            print("?\n");
-            break;
-    }
-
-    if (change) {
-        if (pp) {
-            int16_t val = *pp + change;
-            if (val > (int16_t)UINT8_MAX)
-                *pp = UINT8_MAX;
-            else if (val < 0)
-                *pp = 0;
-            else
-                *pp = (uint8_t)val;
-            xprintf("= %u\n", *pp);
-        } else {
-            print("?\n");
-        }
-    }
-
-    if (param) {
-        xprintf("M%u:%s> ", param, desc ? desc : "???");
-    } else {
-        print("M> ");
-    }
-    return true;
-}
-
-#endif /* MOUSEKEY_ENABLE */
 
 /***********************************************************
  * Utilities
