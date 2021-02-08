@@ -116,11 +116,11 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
             return false;
         }
 
-        if ((IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT)) && keycode == KC_MEH)
+        if ((IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT)) && (keycode == KC_MEH || keycode == KC_LALT || keycode == KC_LGUI))
         {
             layer_clear();
             PLAY_SONG(song_vim_off);
-            return false;
+            return true;
         }
     }
 
