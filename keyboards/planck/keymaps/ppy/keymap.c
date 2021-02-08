@@ -29,12 +29,12 @@ enum planck_layers {
 enum planck_keycodes {
     QWERTY = VIM_SAFE_RANGE,
     BACKLIT,
-    CTRL_ESC
+    CTRL_ESC,
+    SFT_ENT
 };
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
-#define SFT_ENT MT(MOD_RSFT, KC_ENT)
 #define RAISE_BS LT(RAISE, KC_QUOT)
 #define RAISE_VIM LT(RAISE, KC_QUOT)
 
@@ -86,21 +86,38 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 };
 
-static bool ctrl_esc_consumed;
+static bool custom_mod_tap_consumed;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     switch (keycode) {
+        case SFT_ENT:
+            if (record->event.pressed) {
+                register_code(KC_RSFT);
+                custom_mod_tap_consumed = false;
+                return true;
+            }
+            else
+            {
+                unregister_code(KC_RSFT);
+                if (!custom_mod_tap_consumed)
+                {
+                    tap_code16(KC_ENT);
+                }
+
+                return false;
+            }
+
         case CTRL_ESC:
             if (record->event.pressed) {
                 register_code(KC_LCTL);
-                ctrl_esc_consumed = false;
+                custom_mod_tap_consumed = false;
                 return true;
             }
             else
             {
                 unregister_code(KC_LCTL);
-                if (!ctrl_esc_consumed)
+                if (!custom_mod_tap_consumed)
                 {
                     if (IS_LAYER_ON(_VINSERT))
                         layer_move(_VIM);
@@ -112,7 +129,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
     }
 
-    ctrl_esc_consumed |= record->event.pressed;
+    custom_mod_tap_consumed |= record->event.pressed;
 
     switch (keycode) {
         case KC_W:
