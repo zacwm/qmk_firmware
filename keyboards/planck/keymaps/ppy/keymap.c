@@ -95,6 +95,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           if (record->event.pressed) {
               register_code(KC_LCTL);
               ctrl_esc_consumed = false;
+              return true;
           }
           else
           {
@@ -106,16 +107,33 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                   else
                       tap_code16(KC_ESC);
               }
+
+              return false;
           }
-          return false;
   }
 
-  ctrl_esc_consumed = true;
+  ctrl_esc_consumed |= record->event.pressed;
 
   switch (keycode) {
+      case KC_W:
+          if (IS_LAYER_ON(_VINSERT) && record->event.pressed) {
+              if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
+              {
+                  unregister_code(KC_LCTL);
+
+                  register_code(KC_LALT);
+                  tap_code16(KC_BSPC);
+                  unregister_code(KC_LALT);
+
+                  register_code(KC_LCTL);
+                  return false;
+              }
+          }
+          return true;
+          break;
       case KC_BSPC:
           if (record->event.pressed) {
-              if (get_mods() & MOD_BIT(KC_LCTL))
+              if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
               {
                   unregister_code(KC_LCTL);
 
