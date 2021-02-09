@@ -24,6 +24,224 @@
 #include "debug.h"
 #include "mousekey.h"
 
+/* Figure out which variant the user wants. */
+#ifndef MK_VARIANT
+
+#    if !defined(MK_3_SPEED) && !defined(MK_KINETIC_SPEED)
+#        if defined(MK_COMBINED)
+#            define MK_VARIANT MK_TYPE_X11_COMBINED
+#        else
+#            define MK_VARIANT MK_TYPE_X11 /* Default */
+#        endif
+#        if defined(MK_MOMENTARY_ACCEL)
+#            warning "MK_MOMENTARY_ACCEL ignored for MK_TYPE_X11"
+#        endif
+
+#    elif defined(MK_3_SPEED) && !defined(MK_KINETIC_SPEED)
+#        if defined(MK_MOMENTARY_ACCEL)
+#            define MK_VARIANT MK_TYPE_3_SPEED_MOMENTARY
+#        else
+#            define MK_VARIANT MK_TYPE_3_SPEED
+#        endif
+#        if defined(MK_COMBINED)
+#            warning "MK_COMBINED ignored for MK_TYPE_3_SPEED"
+#        endif
+
+#    elif !defined(MK_3_SPEED) && defined(MK_KINETIC_SPEED)
+#        define MK_VARIANT MK_TYPE_KINETIC
+#        if defined(MK_COMBINED)
+#            warning "MK_COMBINED ignored for MK_TYPE_KINETIC"
+#        endif
+#        if defined(MK_MOMENTARY_ACCEL)
+#            warning "MK_MOMENTARY_ACCEL ignored for MK_TYPE_KINETIC"
+#        endif
+
+#    elif defined(MK_3_SPEED) && defined(MK_KINETIC_SPEED)
+#        error "#define at most one of MK_3_SPEED MK_KINETIC_SPEED"
+#    else
+#        error "Inconceivable! I don't know what you want?"
+#    endif
+
+#endif
+
+/*
+ * Do not contemplate `MK_3_SPEED` nor `MK_KINETIC_SPEED` henceforth—nor
+ * utter `MK_COMBINED` nor `MK_MOMENTARY_ACCEL` either—on pain of death.
+ * Furnished below are macros to test for `MK_TYPE_*`.
+ */
+#define MK_KIND(v) ((MK_VARIANT & ~0xff) == ((v) & ~0xff))
+#define MK_TYPE(v) (MK_VARIANT == (v))
+
+#if MK_KIND(MK_TYPE_X11)
+
+#    ifndef MOUSEKEY_MOVE_MAX
+#        define MOUSEKEY_MOVE_MAX INT8_MAX
+#    elif MOUSEKEY_MOVE_MAX > INT8_MAX
+#        error MOUSEKEY_MOVE_MAX cannot be greater than 127
+#    endif
+#    ifndef MOUSEKEY_WHEEL_MAX
+#        define MOUSEKEY_WHEEL_MAX INT8_MAX
+#    elif MOUSEKEY_WHEEL_MAX > INT8_MAX
+#        error MOUSEKEY_WHEEL_MAX cannot be greater than 127
+#    endif
+
+#    ifndef MOUSEKEY_MOVE_DELTA
+#        define MOUSEKEY_MOVE_DELTA 5
+#    endif
+#    ifndef MOUSEKEY_WHEEL_DELTA
+#        define MOUSEKEY_WHEEL_DELTA 1
+#    endif
+#    ifndef MOUSEKEY_DELAY
+#        define MOUSEKEY_DELAY 300
+#    endif
+#    ifndef MOUSEKEY_INTERVAL
+#        define MOUSEKEY_INTERVAL 50
+#    endif
+#    ifndef MOUSEKEY_MAX_SPEED
+#        define MOUSEKEY_MAX_SPEED 10
+#    endif
+#    ifndef MOUSEKEY_TIME_TO_MAX
+#        define MOUSEKEY_TIME_TO_MAX 20
+#    endif
+#    ifndef MOUSEKEY_WHEEL_DELAY
+#        define MOUSEKEY_WHEEL_DELAY 300
+#    endif
+#    ifndef MOUSEKEY_WHEEL_INTERVAL
+#        define MOUSEKEY_WHEEL_INTERVAL 100
+#    endif
+#    ifndef MOUSEKEY_WHEEL_MAX_SPEED
+#        define MOUSEKEY_WHEEL_MAX_SPEED 8
+#    endif
+#    ifndef MOUSEKEY_WHEEL_TIME_TO_MAX
+#        define MOUSEKEY_WHEEL_TIME_TO_MAX 40
+#    endif
+
+#elif MK_KIND(MK_TYPE_3_SPEED)
+
+#    ifndef MK_C_OFFSET_UNMOD
+#        define MK_C_OFFSET_UNMOD 16
+#    endif
+#    ifndef MK_C_INTERVAL_UNMOD
+#        define MK_C_INTERVAL_UNMOD 16
+#    endif
+#    ifndef MK_C_OFFSET_0
+#        define MK_C_OFFSET_0 1
+#    endif
+#    ifndef MK_C_INTERVAL_0
+#        define MK_C_INTERVAL_0 32
+#    endif
+#    ifndef MK_C_OFFSET_1
+#        define MK_C_OFFSET_1 4
+#    endif
+#    ifndef MK_C_INTERVAL_1
+#        define MK_C_INTERVAL_1 16
+#    endif
+#    ifndef MK_C_OFFSET_2
+#        define MK_C_OFFSET_2 32
+#    endif
+#    ifndef MK_C_INTERVAL_2
+#        define MK_C_INTERVAL_2 16
+#    endif
+
+#    ifndef MK_W_OFFSET_UNMOD
+#        define MK_W_OFFSET_UNMOD 1
+#    endif
+#    ifndef MK_W_INTERVAL_UNMOD
+#        define MK_W_INTERVAL_UNMOD 40
+#    endif
+#    ifndef MK_W_OFFSET_0
+#        define MK_W_OFFSET_0 1
+#    endif
+#    ifndef MK_W_INTERVAL_0
+#        define MK_W_INTERVAL_0 360
+#    endif
+#    ifndef MK_W_OFFSET_1
+#        define MK_W_OFFSET_1 1
+#    endif
+#    ifndef MK_W_INTERVAL_1
+#        define MK_W_INTERVAL_1 120
+#    endif
+#    ifndef MK_W_OFFSET_2
+#        define MK_W_OFFSET_2 1
+#    endif
+#    ifndef MK_W_INTERVAL_2
+#        define MK_W_INTERVAL_2 20
+#    endif
+
+#elif MK_KIND(MK_TYPE_KINETIC)
+
+/* TODO: Rename these four! */
+/* Names coincide with those of MK_TYPE_X11 but have different semantics. */
+#    ifndef MOUSEKEY_MOVE_MAX
+#        define MOUSEKEY_MOVE_MAX INT8_MAX
+#    elif MOUSEKEY_MOVE_MAX > INT8_MAX
+#        error MOUSEKEY_MOVE_MAX cannot be greater than INT8_MAX
+#    endif
+#    ifndef MOUSEKEY_MOVE_DELTA
+#        define MOUSEKEY_MOVE_DELTA 25
+#    endif
+#    ifndef MOUSEKEY_DELAY
+#        define MOUSEKEY_DELAY 8
+#    endif
+#    ifndef MOUSEKEY_INTERVAL
+#        define MOUSEKEY_INTERVAL 8
+#    endif
+
+/* Same semantics, maybe? */
+#    ifndef MOUSEKEY_MAX_SPEED
+#        define MOUSEKEY_MAX_SPEED 10
+#    endif
+#    ifndef MOUSEKEY_WHEEL_MAX_SPEED
+#        define MOUSEKEY_WHEEL_MAX_SPEED 8
+#    endif
+
+#    ifndef MOUSEKEY_TIME_TO_MAX
+#        define MOUSEKEY_TIME_TO_MAX 20
+#    endif
+#    ifndef MOUSEKEY_WHEEL_TIME_TO_MAX
+#        define MOUSEKEY_WHEEL_TIME_TO_MAX 40
+#    endif
+
+/* Unique to MK_TYPE_KINETIC */
+#    ifndef MOUSEKEY_INITIAL_SPEED
+#        define MOUSEKEY_INITIAL_SPEED 100
+#    endif
+#    ifndef MOUSEKEY_BASE_SPEED
+#        define MOUSEKEY_BASE_SPEED 1000
+#    endif
+#    ifndef MOUSEKEY_DECELERATED_SPEED
+#        define MOUSEKEY_DECELERATED_SPEED 400
+#    endif
+#    ifndef MOUSEKEY_ACCELERATED_SPEED
+#        define MOUSEKEY_ACCELERATED_SPEED 3000
+#    endif
+#    ifndef MOUSEKEY_WHEEL_INITIAL_MOVEMENTS
+#        define MOUSEKEY_WHEEL_INITIAL_MOVEMENTS 16
+#    endif
+#    ifndef MOUSEKEY_WHEEL_BASE_MOVEMENTS
+#        define MOUSEKEY_WHEEL_BASE_MOVEMENTS 32
+#    endif
+#    ifndef MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS
+#        define MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS 48
+#    endif
+#    ifndef MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS
+#        define MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS 8
+#    endif
+
+#else
+#    error "Unknown MK_VARIANT"
+#endif /* MK_VARIANT */
+
+/**********************************************************************/
+
+#pragma GCC diagnostic error "-Wextra"
+
+#define NO_FIELD(no_field)                                              \
+    _Pragma("GCC diagnostic push");                                     \
+    _Pragma("GCC diagnostic ignored \"-Wmissing-field-initializers\""); \
+    no_field;                                                           \
+    _Pragma("GCC diagnostic pop")
+
 inline int8_t times_inv_sqrt2(int8_t x) {
     // 181/256 is pretty close to 1/sqrt(2)
     // 0.70703125                 0.707106781
@@ -33,18 +251,26 @@ inline int8_t times_inv_sqrt2(int8_t x) {
 }
 
 static report_mouse_t mouse_report = {0};
-static void           mousekey_debug(void);
-static uint8_t        mousekey_accel        = 0;
-static uint8_t        mousekey_repeat       = 0;
-static uint8_t        mousekey_wheel_repeat = 0;
-#ifdef MK_KINETIC_SPEED
-static uint16_t mouse_timer = 0;
-#endif
 
-#ifndef MK_3_SPEED
+static void mousekey_debug(void);
 
 static uint16_t last_timer_c = 0;
 static uint16_t last_timer_w = 0;
+
+#if MK_KIND(MK_TYPE_KINETIC)
+/* XXX: overflows if key held down > 65s. */
+static uint16_t mouse_timer = 0;
+#endif
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+/* TODO: untangle MK_TYPE_KINETIC.
+ * Currently shares config/state w/ X11 but probably shouldn't. */
+
+/* KC_MS_ACCEL{0,1,2} state bitflag */
+static uint8_t mousekey_accel = 0;
+
+static uint8_t mousekey_repeat       = 0;
+static uint8_t mousekey_wheel_repeat = 0;
 
 /*
  * Mouse keys acceleration algorithm
@@ -70,7 +296,9 @@ uint8_t mk_wheel_interval    = MOUSEKEY_WHEEL_INTERVAL;
 uint8_t mk_wheel_max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
 uint8_t mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
 
-#    ifndef MK_COMBINED
+#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
+
+#if MK_TYPE(MK_TYPE_X11)
 
 static uint8_t move_unit(void) {
     uint16_t unit;
@@ -108,8 +336,7 @@ static uint8_t wheel_unit(void) {
     return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
 }
 
-#    else /* #ifndef MK_COMBINED */
-#        ifndef MK_KINETIC_SPEED
+#elif MK_KIND(MK_TYPE_KINETIC)
 
 /*
  * Kinetic movement  acceleration algorithm
@@ -117,27 +344,21 @@ static uint8_t wheel_unit(void) {
  *  current speed = I + A * T/50 + A * 0.5 * T^2 | maximum B
  *
  * T: time since the mouse movement started
- * E: mouse events per second (set through MOUSEKEY_INTERVAL, UHK sends 250, the
- *    pro micro on my Signum 3.0 sends only 125!)
  * I: initial speed at time 0
  * A: acceleration
  * B: base mouse travel speed
  */
-const uint16_t mk_accelerated_speed = MOUSEKEY_ACCELERATED_SPEED;
-const uint16_t mk_base_speed        = MOUSEKEY_BASE_SPEED;
-const uint16_t mk_decelerated_speed = MOUSEKEY_DECELERATED_SPEED;
-const uint16_t mk_initial_speed     = MOUSEKEY_INITIAL_SPEED;
 
 static uint8_t move_unit(void) {
-    float speed = mk_initial_speed;
+    float speed = MOUSEKEY_INITIAL_SPEED;
 
     if (mousekey_accel & ((1 << 0) | (1 << 2))) {
-        speed = mousekey_accel & (1 << 2) ? mk_accelerated_speed : mk_decelerated_speed;
+        speed = mousekey_accel & (1 << 2) ? MOUSEKEY_ACCELERATED_SPEED : MOUSEKEY_DECELERATED_SPEED;
     } else if (mousekey_repeat && mouse_timer) {
         const float time_elapsed = timer_elapsed(mouse_timer) / 50;
-        speed                    = mk_initial_speed + MOUSEKEY_MOVE_DELTA * time_elapsed + MOUSEKEY_MOVE_DELTA * 0.5 * time_elapsed * time_elapsed;
+        speed                    = MOUSEKEY_INITIAL_SPEED + MOUSEKEY_MOVE_DELTA * time_elapsed + MOUSEKEY_MOVE_DELTA * 0.5 * time_elapsed * time_elapsed;
 
-        speed = speed > mk_base_speed ? mk_base_speed : speed;
+        speed = speed > MOUSEKEY_BASE_SPEED ? MOUSEKEY_BASE_SPEED : speed;
     }
 
     /* convert speed to USB mouse speed 1 to 127 */
@@ -147,27 +368,28 @@ static uint8_t move_unit(void) {
     return speed > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : speed;
 }
 
-float mk_wheel_interval = 1000.0f / MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
+/* XXX: was redefⁿ of MK_TYPE_X11's mk_wheel_interval as float */
+static float kinetic_wheel_interval = 1000.0f / MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
 
 static uint8_t wheel_unit(void) {
     float speed = MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
 
     if (mousekey_accel & ((1 << 0) | (1 << 2))) {
         speed = mousekey_accel & (1 << 2) ? MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS : MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS;
-    } else if (mousekey_repeat && mouse_timer) {
-        if (mk_wheel_interval != MOUSEKEY_WHEEL_BASE_MOVEMENTS) {
+    } else if (mousekey_wheel_repeat /* XXX: was mousekey_repeat */ && mouse_timer) {
+        if (kinetic_wheel_interval != MOUSEKEY_WHEEL_BASE_MOVEMENTS) {
             const float time_elapsed = timer_elapsed(mouse_timer) / 50;
             speed                    = MOUSEKEY_WHEEL_INITIAL_MOVEMENTS + 1 * time_elapsed + 1 * 0.5 * time_elapsed * time_elapsed;
         }
         speed = speed > MOUSEKEY_WHEEL_BASE_MOVEMENTS ? MOUSEKEY_WHEEL_BASE_MOVEMENTS : speed;
     }
 
-    mk_wheel_interval = 1000.0f / speed;
+    kinetic_wheel_interval = 1000.0f / speed;
 
-    return 1;
+    return 1; /* XXX: wat. */
 }
 
-#        else /* #ifndef MK_KINETIC_SPEED */
+#elif MK_TYPE(MK_TYPE_X11_COMBINED)
 
 static uint8_t move_unit(void) {
     uint16_t unit;
@@ -205,8 +427,9 @@ static uint8_t wheel_unit(void) {
     return (unit > MOUSEKEY_WHEEL_MAX ? MOUSEKEY_WHEEL_MAX : (unit == 0 ? 1 : unit));
 }
 
-#        endif /* #ifndef MK_KINETIC_SPEED */
-#    endif     /* #ifndef MK_COMBINED */
+#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC || MK_TYPE_X11_COMBINED */
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
 
 void mousekey_task(void) {
     // report cursor and scroll movement independently
@@ -234,6 +457,11 @@ void mousekey_task(void) {
             }
         }
     }
+
+#if MK_KIND(MK_TYPE_KINETIC)
+    /* XXX previously we just redefined mk_wheel_interval as a float */
+    mk_wheel_interval = (uint8_t)kinetic_wheel_interval;
+#endif
     if ((tmpmr.v || tmpmr.h) && timer_elapsed(last_timer_w) > (mousekey_wheel_repeat ? mk_wheel_interval : mk_wheel_delay * 10)) {
         if (mousekey_wheel_repeat != UINT8_MAX) mousekey_wheel_repeat++;
         if (tmpmr.v != 0) mouse_report.v = wheel_unit() * ((tmpmr.v > 0) ? 1 : -1);
@@ -257,11 +485,11 @@ void mousekey_task(void) {
 }
 
 void mousekey_on(uint8_t code) {
-#    ifdef MK_KINETIC_SPEED
+#    if MK_KIND(MK_TYPE_KINETIC)
     if (mouse_timer == 0) {
         mouse_timer = timer_read();
     }
-#    endif /* #ifdef MK_KINETIC_SPEED */
+#    endif /* MK_TYPE_KINETIC */
 
     if (code == KC_MS_UP)
         mouse_report.y = move_unit() * -1;
@@ -316,28 +544,28 @@ void mousekey_off(uint8_t code) {
         mousekey_accel &= ~(1 << 2);
     if (mouse_report.x == 0 && mouse_report.y == 0) {
         mousekey_repeat = 0;
-#    ifdef MK_KINETIC_SPEED
+#    if MK_KIND(MK_TYPE_KINETIC)
         mouse_timer = 0;
-#    endif /* #ifdef MK_KINETIC_SPEED */
+#    endif /* MK_TYPE_KINETIC */
     }
     if (mouse_report.v == 0 && mouse_report.h == 0) mousekey_wheel_repeat = 0;
 }
 
-#else /* #ifndef MK_3_SPEED */
+#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
+
+#if MK_KIND(MK_TYPE_3_SPEED)
 
 enum { mkspd_unmod, mkspd_0, mkspd_1, mkspd_2, mkspd_COUNT };
-#    ifndef MK_MOMENTARY_ACCEL
-static uint8_t  mk_speed                 = mkspd_1;
+#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
+static uint8_t mk_speed = mkspd_unmod;
 #    else
-static uint8_t mk_speed      = mkspd_unmod;
-static uint8_t mkspd_DEFAULT = mkspd_unmod;
+static uint8_t mk_speed = mkspd_1;
 #    endif
-static uint16_t last_timer_c             = 0;
-static uint16_t last_timer_w             = 0;
-uint16_t        c_offsets[mkspd_COUNT]   = {MK_C_OFFSET_UNMOD, MK_C_OFFSET_0, MK_C_OFFSET_1, MK_C_OFFSET_2};
-uint16_t        c_intervals[mkspd_COUNT] = {MK_C_INTERVAL_UNMOD, MK_C_INTERVAL_0, MK_C_INTERVAL_1, MK_C_INTERVAL_2};
-uint16_t        w_offsets[mkspd_COUNT]   = {MK_W_OFFSET_UNMOD, MK_W_OFFSET_0, MK_W_OFFSET_1, MK_W_OFFSET_2};
-uint16_t        w_intervals[mkspd_COUNT] = {MK_W_INTERVAL_UNMOD, MK_W_INTERVAL_0, MK_W_INTERVAL_1, MK_W_INTERVAL_2};
+
+static const uint16_t c_offsets[mkspd_COUNT]   = {MK_C_OFFSET_UNMOD, MK_C_OFFSET_0, MK_C_OFFSET_1, MK_C_OFFSET_2};
+static const uint16_t c_intervals[mkspd_COUNT] = {MK_C_INTERVAL_UNMOD, MK_C_INTERVAL_0, MK_C_INTERVAL_1, MK_C_INTERVAL_2};
+static const uint16_t w_offsets[mkspd_COUNT]   = {MK_W_OFFSET_UNMOD, MK_W_OFFSET_0, MK_W_OFFSET_1, MK_W_OFFSET_2};
+static const uint16_t w_intervals[mkspd_COUNT] = {MK_W_INTERVAL_UNMOD, MK_W_INTERVAL_0, MK_W_INTERVAL_1, MK_W_INTERVAL_2};
 
 void mousekey_task(void) {
     // report cursor and scroll movement independently
@@ -420,7 +648,7 @@ void mousekey_on(uint8_t code) {
 }
 
 void mousekey_off(uint8_t code) {
-#    ifdef MK_MOMENTARY_ACCEL
+#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
     uint8_t const old_speed = mk_speed;
 #    endif
     if (code == KC_MS_UP && mouse_report.y < 0)
@@ -441,18 +669,18 @@ void mousekey_off(uint8_t code) {
         mouse_report.h = 0;
     else if (IS_MOUSEKEY_BUTTON(code))
         mouse_report.buttons &= ~(1 << (code - KC_MS_BTN1));
-#    ifdef MK_MOMENTARY_ACCEL
+#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
     else if (code == KC_MS_ACCEL0)
-        mk_speed = mkspd_DEFAULT;
+        mk_speed = mkspd_unmod;
     else if (code == KC_MS_ACCEL1)
-        mk_speed = mkspd_DEFAULT;
+        mk_speed = mkspd_unmod;
     else if (code == KC_MS_ACCEL2)
-        mk_speed = mkspd_DEFAULT;
+        mk_speed = mkspd_unmod;
     if (mk_speed != old_speed) adjust_speed();
 #    endif
 }
 
-#endif /* #ifndef MK_3_SPEED */
+#endif /* MK_TYPE_3_SPEED */
 
 void mousekey_send(void) {
     mousekey_debug();
@@ -463,14 +691,18 @@ void mousekey_send(void) {
 }
 
 void mousekey_clear(void) {
-    mouse_report          = (report_mouse_t){};
+    NO_FIELD(mouse_report = (report_mouse_t){});
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+    mousekey_accel        = 0;
     mousekey_repeat       = 0;
     mousekey_wheel_repeat = 0;
-    mousekey_accel        = 0;
+#endif
 }
 
 static void mousekey_debug(void) {
     if (!debug_mouse) return;
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
     print("mousekey [btn|x y v h](rep/acl): [");
     print_hex8(mouse_report.buttons);
     print("|");
@@ -486,6 +718,7 @@ static void mousekey_debug(void) {
     print("/");
     print_dec(mousekey_accel);
     print(")\n");
+#endif
 }
 
 /***********************************************************
@@ -497,7 +730,7 @@ static void mousekey_debug(void) {
 static void mousekey_param_print(void) {
     xprintf(/* clang-format off */
 
-#ifndef MK_3_SPEED
+#if MK_KIND(MK_TYPE_X11)
         "1:	delay(*10ms): %u\n"
         "2:	interval(ms): %u\n"
         "3:	max_speed: %u\n"
@@ -531,13 +764,13 @@ static void mousekey_console_help(void) {
         "rt:	-10\n"
         "ESC/q:	quit\n"
 
-#ifndef MK_3_SPEED
+#        if MK_KIND(MK_TYPE_X11)
         "\n"
         "speed = delta * max_speed * (repeat / time_to_max)\n"
         "where delta: cursor=%d, wheel=%d\n"
         "See http://en.wikipedia.org/wiki/Mouse_keys\n"
         , MOUSEKEY_MOVE_DELTA, MOUSEKEY_WHEEL_DELTA
-#endif
+#        endif
 
     ); /* clang-format on */
 }
@@ -587,21 +820,21 @@ bool mousekey_console(uint8_t code) {
             switch (param) { /* clang-format off */
 #               define PARAM(n, v) case n: pp = &(v); desc = #v; break
 
-#ifndef MK_3_SPEED
+#    if MK_KIND(MK_TYPE_X11)
                 PARAM(1, mk_delay);
                 PARAM(2, mk_interval);
                 PARAM(3, mk_max_speed);
                 PARAM(4, mk_time_to_max);
                 PARAM(5, mk_wheel_max_speed);
                 PARAM(6, mk_wheel_time_to_max);
-#endif /* MK_3_SPEED */
+#    endif /* MK_TYPE_X11 */
 
-#               undef PARAM
+#               undef PARAM /* clang-format on */
                 default:
                     param = 0;
                     print("?\n");
                     break;
-            } /* clang-format on */
+            }
             if (param) xprintf("%u\n", param);
             break;
 
@@ -614,14 +847,14 @@ bool mousekey_console(uint8_t code) {
 
         case KC_D:
 
-#    ifndef MK_3_SPEED
+#    if MK_KIND(MK_TYPE_X11)
             mk_delay             = MOUSEKEY_DELAY / 10;
             mk_interval          = MOUSEKEY_INTERVAL;
             mk_max_speed         = MOUSEKEY_MAX_SPEED;
             mk_time_to_max       = MOUSEKEY_TIME_TO_MAX;
             mk_wheel_max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
             mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
-#    endif /* MK_3_SPEED */
+#    endif /* MK_TYPE_X11 */
 
             print("defaults\n");
             break;
