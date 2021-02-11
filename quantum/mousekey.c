@@ -751,32 +751,36 @@ static void mousekey_debug(void) {
 #ifdef COMMAND_ENABLE
 
 #    if !defined(NO_PRINT) && !defined(USER_PRINT)
-static void mousekey_param_print(void) {
+
+#        if MK_KIND(MK_TYPE_X11)
+static void print_x11_t(uint8_t n, const char *name, const x11_t *what) {
     xprintf(/* clang-format off */
+        "\t%s\n"
+        "%u: .delay(*10ms): %u\n"
+        "%u: .interval(ms): %u\n"
+        "%u: .max_speed: %u\n"
+        "%u: .time_to_max: %u\n"
 
-#if MK_KIND(MK_TYPE_X11)
-        "1:	delay(*10ms): %u\n"
-        "2:	interval(ms): %u\n"
-        "3:	max_speed: %u\n"
-        "4:	time_to_max: %u\n"
-        "5:	wheel_max_speed: %u\n"
-        "6:	wheel_time_to_max: %u\n"
+        , name
+        , n + 1, what->delay
+        , n + 2, what->interval
+        , n + 3, what->max_speed
+        , n + 4, what->time_to_max
 
-        , mouse.delay
-        , mouse.interval
-        , mouse.max_speed
-        , mouse.time_to_max
-        , wheel.max_speed
-        , wheel.time_to_max
-#else
-        "no knobs sorry\n"
-#endif
-
-    ); /* clang-format on */
+        ); /* clang-format on */
 }
-#    endif /* !NO_PRINT && !USER_PRINT */
+#        endif /* MK_TYPE_X11 */
 
-#    if !defined(NO_PRINT) && !defined(USER_PRINT)
+static void mousekey_param_print(void) {
+#        if MK_KIND(MK_TYPE_X11)
+    print_x11_t(0, "mouse", &mouse);
+    print_x11_t(4, "wheel", &wheel);
+
+#        else
+    print("no knobs sorry\n");
+#        endif
+}
+
 static void mousekey_console_help(void) {
     mousekey_param_print();
     xprintf(/* clang-format off */
@@ -798,6 +802,7 @@ static void mousekey_console_help(void) {
 
     ); /* clang-format on */
 }
+
 #    endif /* !NO_PRINT && !USER_PRINT */
 
 /* Only used by `quantum/command.c` / `command_proc()`. To avoid
@@ -849,8 +854,10 @@ bool mousekey_console(uint8_t code) {
                 PARAM(2, mouse.interval);
                 PARAM(3, mouse.max_speed);
                 PARAM(4, mouse.time_to_max);
-                PARAM(5, wheel.max_speed);
-                PARAM(6, wheel.time_to_max);
+                PARAM(5, wheel.delay);
+                PARAM(6, wheel.interval);
+                PARAM(7, wheel.max_speed);
+                PARAM(8, wheel.time_to_max);
 #    endif /* MK_TYPE_X11 */
 
 #               undef PARAM /* clang-format on */
@@ -872,12 +879,8 @@ bool mousekey_console(uint8_t code) {
         case KC_D:
 
 #    if MK_KIND(MK_TYPE_X11)
-            mouse.delay       = MOUSEKEY_DELAY / 10;
-            mouse.interval    = MOUSEKEY_INTERVAL;
-            mouse.max_speed   = MOUSEKEY_MAX_SPEED;
-            mouse.time_to_max = MOUSEKEY_TIME_TO_MAX;
-            wheel.max_speed   = MOUSEKEY_WHEEL_MAX_SPEED;
-            wheel.time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
+            mouse = (x11_t)MK_X11_MOUSE;
+            wheel = (x11_t)MK_X11_WHEEL;
 #    endif /* MK_TYPE_X11 */
 
             print("defaults\n");
