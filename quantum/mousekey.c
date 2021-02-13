@@ -464,73 +464,6 @@ void mousekey_task(void) {
     mouse_report = tmpmr;
 }
 
-void mousekey_on(uint8_t code) {
-#    if MK_KIND(MK_TYPE_KINETIC)
-    if (mouse_timer == 0) {
-        mouse_timer = timer_read();
-    }
-#    endif /* MK_TYPE_KINETIC */
-
-    if (code == KC_MS_UP)
-        mouse_report.y = move_unit() * -1;
-    else if (code == KC_MS_DOWN)
-        mouse_report.y = move_unit();
-    else if (code == KC_MS_LEFT)
-        mouse_report.x = move_unit() * -1;
-    else if (code == KC_MS_RIGHT)
-        mouse_report.x = move_unit();
-    else if (code == KC_MS_WH_UP)
-        mouse_report.v = wheel_unit();
-    else if (code == KC_MS_WH_DOWN)
-        mouse_report.v = wheel_unit() * -1;
-    else if (code == KC_MS_WH_LEFT)
-        mouse_report.h = wheel_unit() * -1;
-    else if (code == KC_MS_WH_RIGHT)
-        mouse_report.h = wheel_unit();
-    else if (IS_MOUSEKEY_BUTTON(code))
-        mouse_report.buttons |= 1 << (code - KC_MS_BTN1);
-    else if (code == KC_MS_ACCEL0)
-        mousekey_accel |= (1 << 0);
-    else if (code == KC_MS_ACCEL1)
-        mousekey_accel |= (1 << 1);
-    else if (code == KC_MS_ACCEL2)
-        mousekey_accel |= (1 << 2);
-}
-
-void mousekey_off(uint8_t code) {
-    if (code == KC_MS_UP && mouse_report.y < 0)
-        mouse_report.y = 0;
-    else if (code == KC_MS_DOWN && mouse_report.y > 0)
-        mouse_report.y = 0;
-    else if (code == KC_MS_LEFT && mouse_report.x < 0)
-        mouse_report.x = 0;
-    else if (code == KC_MS_RIGHT && mouse_report.x > 0)
-        mouse_report.x = 0;
-    else if (code == KC_MS_WH_UP && mouse_report.v > 0)
-        mouse_report.v = 0;
-    else if (code == KC_MS_WH_DOWN && mouse_report.v < 0)
-        mouse_report.v = 0;
-    else if (code == KC_MS_WH_LEFT && mouse_report.h < 0)
-        mouse_report.h = 0;
-    else if (code == KC_MS_WH_RIGHT && mouse_report.h > 0)
-        mouse_report.h = 0;
-    else if (IS_MOUSEKEY_BUTTON(code))
-        mouse_report.buttons &= ~(1 << (code - KC_MS_BTN1));
-    else if (code == KC_MS_ACCEL0)
-        mousekey_accel &= ~(1 << 0);
-    else if (code == KC_MS_ACCEL1)
-        mousekey_accel &= ~(1 << 1);
-    else if (code == KC_MS_ACCEL2)
-        mousekey_accel &= ~(1 << 2);
-    if (mouse_report.x == 0 && mouse_report.y == 0) {
-        mouse_axes.repeat = 0;
-#    if MK_KIND(MK_TYPE_KINETIC)
-        mouse_timer = 0;
-#    endif /* MK_TYPE_KINETIC */
-    }
-    if (mouse_report.v == 0 && mouse_report.h == 0) wheel_axes.repeat = 0;
-}
-
 #endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
 
 #if MK_KIND(MK_TYPE_3_SPEED)
@@ -596,71 +529,114 @@ void adjust_speed(void) {
     }
 }
 
+#endif /* MK_TYPE_3_SPEED */
+
+#define MR mouse_report
+
 void mousekey_on(uint8_t code) {
-    uint16_t const c_offset  = c_offsets[mk_speed];
-    uint16_t const w_offset  = w_offsets[mk_speed];
-    uint8_t const  old_speed = mk_speed;
-    if (code == KC_MS_UP)
-        mouse_report.y = c_offset * -1;
-    else if (code == KC_MS_DOWN)
-        mouse_report.y = c_offset;
-    else if (code == KC_MS_LEFT)
-        mouse_report.x = c_offset * -1;
-    else if (code == KC_MS_RIGHT)
-        mouse_report.x = c_offset;
-    else if (code == KC_MS_WH_UP)
-        mouse_report.v = w_offset;
-    else if (code == KC_MS_WH_DOWN)
-        mouse_report.v = w_offset * -1;
-    else if (code == KC_MS_WH_LEFT)
-        mouse_report.h = w_offset * -1;
-    else if (code == KC_MS_WH_RIGHT)
-        mouse_report.h = w_offset;
-    else if (IS_MOUSEKEY_BUTTON(code))
-        mouse_report.buttons |= 1 << (code - KC_MS_BTN1);
-    else if (code == KC_MS_ACCEL0)
-        mk_speed = mkspd_0;
-    else if (code == KC_MS_ACCEL1)
-        mk_speed = mkspd_1;
-    else if (code == KC_MS_ACCEL2)
-        mk_speed = mkspd_2;
+#if MK_KIND(MK_TYPE_3_SPEED)
+    uint8_t const old_speed = mk_speed;
+#elif MK_KIND(MK_TYPE_KINETIC)
+    if (mouse_timer == 0) mouse_timer = timer_read();
+#endif
+
+    switch (code) {
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#    define MU move_unit()
+#    define WU wheel_unit()
+#elif MK_KIND(MK_TYPE_3_SPEED)
+#    define MU c_offsets[mk_speed]
+#    define WU w_offsets[mk_speed]
+#endif
+
+            /* clang-format off */
+        case KC_MS_UP:       MR.y = -MU; break;
+        case KC_MS_DOWN:     MR.y = +MU; break;
+        case KC_MS_LEFT:     MR.x = -MU; break;
+        case KC_MS_RIGHT:    MR.x = +MU; break;
+
+        case KC_MS_WH_UP:    MR.v = +WU; break;
+        case KC_MS_WH_DOWN:  MR.v = -WU; break;
+        case KC_MS_WH_LEFT:  MR.h = -WU; break;
+        case KC_MS_WH_RIGHT: MR.h = +WU; break;
+            /* clang-format on */
+
+#undef MU
+#undef WU
+
+        case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
+            mouse_report.buttons |= 1 << (code - KC_MS_BTN1);
+            break;
+
+            /* clang-format off */
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+        case KC_MS_ACCEL0: mousekey_accel |=  (1 << 0); break;
+        case KC_MS_ACCEL1: mousekey_accel |=  (1 << 1); break;
+        case KC_MS_ACCEL2: mousekey_accel |=  (1 << 2); break;
+#elif MK_KIND(MK_TYPE_3_SPEED)
+        case KC_MS_ACCEL0: mk_speed = mkspd_0; break;
+        case KC_MS_ACCEL1: mk_speed = mkspd_1; break;
+        case KC_MS_ACCEL2: mk_speed = mkspd_2; break;
+#endif
+            /* clang-format on */
+    }
+
+#if MK_KIND(MK_TYPE_3_SPEED)
     if (mk_speed != old_speed) adjust_speed();
+#endif
 }
 
 void mousekey_off(uint8_t code) {
-#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
+#if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
     uint8_t const old_speed = mk_speed;
+#endif
+
+    switch (code) {
+            /* clang-format off */
+        case KC_MS_UP:       if (MR.y < 0) MR.y = 0; break;
+        case KC_MS_DOWN:     if (MR.y > 0) MR.y = 0; break;
+        case KC_MS_LEFT:     if (MR.x < 0) MR.x = 0; break;
+        case KC_MS_RIGHT:    if (MR.x > 0) MR.x = 0; break;
+
+        case KC_MS_WH_UP:    if (MR.v > 0) MR.v = 0; break;
+        case KC_MS_WH_DOWN:  if (MR.v < 0) MR.v = 0; break;
+        case KC_MS_WH_LEFT:  if (MR.h < 0) MR.h = 0; break;
+        case KC_MS_WH_RIGHT: if (MR.h > 0) MR.h = 0; break;
+            /* clang-format on */
+
+        case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
+            mouse_report.buttons &= ~(1 << (code - KC_MS_BTN1));
+            break;
+
+            /* clang-format off */
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+        case KC_MS_ACCEL0: mousekey_accel &= ~(1 << 0); break;
+        case KC_MS_ACCEL1: mousekey_accel &= ~(1 << 1); break;
+        case KC_MS_ACCEL2: mousekey_accel &= ~(1 << 2); break;
+#elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
+        case KC_MS_ACCEL0 ... KC_MS_ACCEL2: mk_speed = mkspd_unmod; break;
+#endif
+            /* clang-format on */
+    }
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+    if (MR.x == 0 && MR.y == 0) {
+        mouse_axes.repeat = 0;
+#    if MK_KIND(MK_TYPE_KINETIC)
+        mouse_timer = 0;
 #    endif
-    if (code == KC_MS_UP && mouse_report.y < 0)
-        mouse_report.y = 0;
-    else if (code == KC_MS_DOWN && mouse_report.y > 0)
-        mouse_report.y = 0;
-    else if (code == KC_MS_LEFT && mouse_report.x < 0)
-        mouse_report.x = 0;
-    else if (code == KC_MS_RIGHT && mouse_report.x > 0)
-        mouse_report.x = 0;
-    else if (code == KC_MS_WH_UP && mouse_report.v > 0)
-        mouse_report.v = 0;
-    else if (code == KC_MS_WH_DOWN && mouse_report.v < 0)
-        mouse_report.v = 0;
-    else if (code == KC_MS_WH_LEFT && mouse_report.h < 0)
-        mouse_report.h = 0;
-    else if (code == KC_MS_WH_RIGHT && mouse_report.h > 0)
-        mouse_report.h = 0;
-    else if (IS_MOUSEKEY_BUTTON(code))
-        mouse_report.buttons &= ~(1 << (code - KC_MS_BTN1));
-#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-    else if (code == KC_MS_ACCEL0)
-        mk_speed = mkspd_unmod;
-    else if (code == KC_MS_ACCEL1)
-        mk_speed = mkspd_unmod;
-    else if (code == KC_MS_ACCEL2)
-        mk_speed = mkspd_unmod;
+    }
+    if (MR.h == 0 && MR.v == 0) {
+        wheel_axes.repeat = 0;
+    }
+
+#elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
     if (mk_speed != old_speed) adjust_speed();
-#    endif
+
+#endif
 }
 
-#endif /* MK_TYPE_3_SPEED */
+#undef MR
 
 void mousekey_send(void) {
     mousekey_debug();
