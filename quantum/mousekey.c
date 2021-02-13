@@ -269,12 +269,14 @@ static axes_t wheel_axes;
 static uint16_t mouse_timer = 0;
 #endif
 
+#define MASK_BTN(kc) MOUSE_BTN_MASK((kc) - (KC_MS_BTN1))
+
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
 /* TODO: untangle MK_TYPE_KINETIC.
  * Currently shares config/state w/ X11 but probably shouldn't. */
 
-/* KC_MS_ACCEL{0,1,2} state bitflag */
-static uint8_t mousekey_accel = 0;
+#    define MASK_ACCEL(kc) (1 << ((kc) - (KC_MS_ACCEL0)))
+static uint8_t accel_state = 0;
 
 /*
  * Mouse keys acceleration algorithm
@@ -322,15 +324,15 @@ static x11_t wheel = MK_X11_WHEEL;
 #if MK_KIND(MK_TYPE_X11)
 
 static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
-    if (mousekey_accel & (1 << 0)) {
+    if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
 #    if MK_TYPE(MK_TYPE_X11)
         return (delta * what->max_speed) / 4;
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
         return 1;
 #    endif
-    } else if (mousekey_accel & (1 << 1)) {
+    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL1)) {
         return (delta * what->max_speed) / 2;
-    } else if (mousekey_accel & (1 << 2)) {
+    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
 #    if MK_TYPE(MK_TYPE_X11)
         return (delta * what->max_speed);
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
@@ -370,8 +372,10 @@ static inline uint8_t clamp(uint8_t n, uint8_t min, uint8_t max) {
 static uint8_t move_unit(void) {
     float speed = MOUSEKEY_INITIAL_SPEED;
 
-    if (mousekey_accel & ((1 << 0) | (1 << 2))) {
-        speed = mousekey_accel & (1 << 2) ? MOUSEKEY_ACCELERATED_SPEED : MOUSEKEY_DECELERATED_SPEED;
+    if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
+        speed = MOUSEKEY_DECELERATED_SPEED;
+    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
+        speed = MOUSEKEY_ACCELERATED_SPEED;
     } else if (mouse_axes.repeat && mouse_timer) {
         const float time_elapsed = timer_elapsed(mouse_timer) / 50;
         speed                    = MOUSEKEY_INITIAL_SPEED + MOUSEKEY_MOVE_DELTA * time_elapsed + MOUSEKEY_MOVE_DELTA * 0.5 * time_elapsed * time_elapsed;
@@ -392,8 +396,10 @@ static float kinetic_wheel_interval = 1000.0f / MOUSEKEY_WHEEL_INITIAL_MOVEMENTS
 static uint8_t wheel_unit(void) {
     float speed = MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
 
-    if (mousekey_accel & ((1 << 0) | (1 << 2))) {
-        speed = mousekey_accel & (1 << 2) ? MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS : MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS;
+    if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
+        speed = MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS;
+    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
+        speed = MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS;
     } else if (wheel_axes.repeat /* XXX: was mouse_axes.repeat */ && mouse_timer) {
         if (kinetic_wheel_interval != MOUSEKEY_WHEEL_BASE_MOVEMENTS) {
             const float time_elapsed = timer_elapsed(mouse_timer) / 50;
@@ -565,20 +571,16 @@ void mousekey_on(uint8_t code) {
 #undef WU
 
         case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
-            mouse_report.buttons |= 1 << (code - KC_MS_BTN1);
+            mouse_report.buttons |= MASK_BTN(code);
             break;
 
-            /* clang-format off */
+        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-        case KC_MS_ACCEL0: mousekey_accel |=  (1 << 0); break;
-        case KC_MS_ACCEL1: mousekey_accel |=  (1 << 1); break;
-        case KC_MS_ACCEL2: mousekey_accel |=  (1 << 2); break;
+            accel_state |= MASK_ACCEL(code);
 #elif MK_KIND(MK_TYPE_3_SPEED)
-        case KC_MS_ACCEL0: mk_speed = mkspd_0; break;
-        case KC_MS_ACCEL1: mk_speed = mkspd_1; break;
-        case KC_MS_ACCEL2: mk_speed = mkspd_2; break;
+            mk_speed = mkspd_0 + code - KC_MS_ACCEL0;
 #endif
-            /* clang-format on */
+            break;
     }
 
 #if MK_KIND(MK_TYPE_3_SPEED)
@@ -605,18 +607,16 @@ void mousekey_off(uint8_t code) {
             /* clang-format on */
 
         case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
-            mouse_report.buttons &= ~(1 << (code - KC_MS_BTN1));
+            mouse_report.buttons &= ~MASK_BTN(code);
             break;
 
-            /* clang-format off */
+        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-        case KC_MS_ACCEL0: mousekey_accel &= ~(1 << 0); break;
-        case KC_MS_ACCEL1: mousekey_accel &= ~(1 << 1); break;
-        case KC_MS_ACCEL2: mousekey_accel &= ~(1 << 2); break;
+            accel_state &= ~MASK_ACCEL(code);
 #elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-        case KC_MS_ACCEL0 ... KC_MS_ACCEL2: mk_speed = mkspd_unmod; break;
+            mk_speed = mkspd_unmod;
 #endif
-            /* clang-format on */
+            break;
     }
 
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
@@ -651,7 +651,7 @@ void mousekey_clear(void) {
     /* old behaviour was to preserve .last_time */
     NO_FIELD(mouse_report = (report_mouse_t){});
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-    mousekey_accel = 0;
+    accel_state = 0;
 
     mouse_axes.repeat = 0;
     wheel_axes.repeat = 0;
@@ -675,7 +675,7 @@ static void mousekey_debug(void) {
     print("](");
     print_dec(mouse_axes.repeat);
     print("/");
-    print_dec(mousekey_accel);
+    print_dec(accel_state);
     print(")\n");
 #endif
 }
