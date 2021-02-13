@@ -452,6 +452,13 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
             case VIM_I:
               vstate = VIM_VI;
               break;
+            case VIM_S:
+              tap_code16(LGUI(KC_X));
+              SEND_STRING("`");
+              tap_code16(LGUI(KC_V));
+              SEND_STRING("`");
+              vstate = VIM_START;
+              break;
             case VIM_J:
               register_code(KC_LSHIFT);
               register_code(KC_DOWN);
