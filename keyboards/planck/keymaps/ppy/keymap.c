@@ -30,13 +30,17 @@ enum planck_keycodes {
     QWERTY = VIM_SAFE_RANGE,
     BACKLIT,
     CTRL_ESC,
-    SFT_ENT
+    SFT_ENT,
+    KVM_SWT
 };
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
 #define RAISE_BS LT(RAISE, KC_QUOT)
 #define RAISE_VIM LT(RAISE, KC_QUOT)
+
+float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
+float song_kvm[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6));
 
 uint8_t vim_cmd_layer(void) {
     return _VIM;
@@ -48,7 +52,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, SFT_ENT,
-            KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE,   VIM_START,_______,KC_UP,   KC_RGHT
+            KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_SPC,  RAISE,   VIM_START,KVM_SWT,KC_UP,   KC_RGHT
             ),
 
     [_LOWER] = LAYOUT_planck_grid(
@@ -132,6 +136,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     custom_mod_tap_consumed |= record->event.pressed;
 
     switch (keycode) {
+        case KVM_SWT:
+            if (record->event.pressed) {
+                if (get_mods() & MOD_BIT(KC_LCTL))
+                {
+                    SEND_STRING(SS_LCTL(SS_TAP(X_F12)) "t");
+                    PLAY_SONG(song_kvm_setting);
+                    return false;
+                }
+
+                tap_code16(KC_SCROLLLOCK);
+                tap_code16(KC_SCROLLLOCK);
+                PLAY_SONG(song_kvm);
+            }
+
+            return false;
+            break;
         case KC_W:
             if (IS_LAYER_ON(_VINSERT) && record->event.pressed) {
                 if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
