@@ -236,6 +236,7 @@
 /**********************************************************************/
 
 #pragma GCC diagnostic error "-Wextra"
+#pragma GCC diagnostic error "-Wconversion"
 
 /**********************************************************************/
 
@@ -250,7 +251,7 @@ inline static uint8_t div_sqrt2(uint8_t x) {
     // 0.70703125                 0.707106781
     // 1 too small for x=99 and x=198
     // This ends up being a mult and discard lower 8 bits
-    return (x * 181) >> 8;
+    return (uint8_t)((x * 181) >> 8);
 }
 
 #define signum(x) (typeof(x))(((x) > 0) - ((x) < 0))
@@ -265,8 +266,8 @@ static dxdy_t bishop(dxdy_t d, uint8_t unit) {
     if (move == 0) move = 1;
 
     return (dxdy_t) /* clang-format off */ {
-        .dx = signum(d.dx) * move,
-        .dy = signum(d.dy) * move
+        .dx = (int8_t)(signum(d.dx) * move),
+        .dy = (int8_t)(signum(d.dy) * move)
     }; /* clang-format on */
 }
 
@@ -293,7 +294,7 @@ static axes_t wheel_axes;
 static uint16_t mouse_timer = 0;
 #endif
 
-#define MASK_BTN(kc) MOUSE_BTN_MASK((kc) - (KC_MS_BTN1))
+#define MASK_BTN(kc) (uint8_t) MOUSE_BTN_MASK((kc) - (KC_MS_BTN1))
 static uint8_t btn_state = 0;
 
 /**********************************************************************/
@@ -302,7 +303,7 @@ static uint8_t btn_state = 0;
 /* TODO: untangle MK_TYPE_KINETIC.
  * Currently shares config/state w/ X11 but probably shouldn't. */
 
-#    define MASK_ACCEL(kc) (1 << ((kc) - (KC_MS_ACCEL0)))
+#    define MASK_ACCEL(kc) (uint8_t)(1 << ((kc) - (KC_MS_ACCEL0)))
 static uint8_t accel_state = 0;
 
 /*
@@ -353,24 +354,24 @@ static x11_t wheel = MK_X11_WHEEL;
 static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
     if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
 #    if MK_TYPE(MK_TYPE_X11)
-        return (delta * what->max_speed) / 4;
+        return (uint16_t)((uint16_t)delta * what->max_speed) >> 2;
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
         return 1;
 #    endif
     } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL1)) {
-        return (delta * what->max_speed) / 2;
+        return (uint16_t)((uint16_t)delta * what->max_speed) >> 1;
     } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
 #    if MK_TYPE(MK_TYPE_X11)
-        return (delta * what->max_speed);
+        return (uint16_t)((uint16_t)delta * what->max_speed);
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
         return UINT16_MAX; /* will be clamped */
 #    endif
     } else if (repeat == 0) {
         return delta;
     } else if (repeat >= what->time_to_max) {
-        return delta * what->max_speed;
+        return (uint16_t)((uint16_t)delta * what->max_speed);
     } else {
-        return (delta * what->max_speed * repeat) / what->time_to_max;
+        return (uint16_t)(((uint32_t)delta * what->max_speed * repeat) / what->time_to_max);
     }
 }
 
@@ -405,7 +406,7 @@ static uint8_t move_unit(void) {
     speed = (uint8_t)(speed / (1000.0f / mouse.interval));
     speed = speed < 1 ? 1 : speed;
 
-    return speed > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : speed;
+    return speed > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (uint8_t)speed;
 }
 
 /* XXX: was redefⁿ of MK_TYPE_X11's mk_wheel_interval as float */
@@ -438,13 +439,13 @@ static uint8_t wheel_unit(void) {
 static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t max) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
 
-    uint16_t dur = axes->repeat ? what->interval : what->delay * 10;
+    uint16_t dur = axes->repeat ? what->interval : (uint16_t)((uint16_t)what->delay * 10);
     if (timer_elapsed(axes->last_time) < dur) return dxdy_0;
 
     if (axes->repeat < UINT8_MAX) axes->repeat++;
 
     uint16_t unit = x11_unit(what, axes->repeat, delta);
-    return bishop(axes->dxdy, unit > max ? max : unit);
+    return bishop(axes->dxdy, unit > max ? max : (uint8_t)unit);
 }
 
 #elif MK_KIND(MK_TYPE_KINETIC)
@@ -452,7 +453,7 @@ static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t m
 static bool kinetic_step(const x11_t* what, axes_t* axes) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return false;
 
-    uint16_t dur = axes->repeat ? what->interval : what->delay * 10;
+    uint16_t dur = axes->repeat ? what->interval : (uint16_t)what->delay * 10;
     if (timer_elapsed(axes->last_time) < dur) return false;
 
     if (axes->repeat < UINT8_MAX) axes->repeat++;
@@ -519,7 +520,7 @@ void mousekey_on(uint8_t code) {
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
             accel_state |= MASK_ACCEL(code);
 #elif MK_KIND(MK_TYPE_3_SPEED)
-            mk_speed = mkspd_0 + code - KC_MS_ACCEL0;
+            mk_speed = (uint8_t)(mkspd_0 + code - KC_MS_ACCEL0);
 #endif
             break;
     }
@@ -548,12 +549,12 @@ void mousekey_off(uint8_t code) {
             /* clang-format on */
 
         case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
-            btn_state &= ~MASK_BTN(code);
+            btn_state &= (uint8_t)~MASK_BTN(code);
             break;
 
         case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-            accel_state &= ~MASK_ACCEL(code);
+            accel_state &= (uint8_t)~MASK_ACCEL(code);
 #elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
             mk_speed = mkspd_unmod;
 #endif
@@ -774,7 +775,7 @@ bool mousekey_console(uint8_t code) {
             break;
 
         case KC_1 ... KC_0: /* KC_0 gives param = 10 */
-            param = 1 + code - KC_1;
+            param = (uint8_t)(1 + code - KC_1);
             switch (param) { /* clang-format off */
 #               define PARAM(n, v) case n: pp = &(v); desc = #v; break
 
