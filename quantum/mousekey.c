@@ -493,9 +493,7 @@ static void adjust_speed(void) {
 #define WD wheel_axes.dxdy
 
 void mousekey_on(uint8_t code) {
-#if MK_KIND(MK_TYPE_3_SPEED)
-    uint8_t const old_speed = mk_speed;
-#elif MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_KINETIC)
     if (mouse_timer == 0) mouse_timer = timer_read();
 #endif
 
@@ -526,15 +524,11 @@ void mousekey_on(uint8_t code) {
     }
 
 #if MK_KIND(MK_TYPE_3_SPEED)
-    if (mk_speed != old_speed) adjust_speed();
+    adjust_speed();
 #endif
 }
 
 void mousekey_off(uint8_t code) {
-#if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-    uint8_t const old_speed = mk_speed;
-#endif
-
     switch (code) {
             /* clang-format off */
         case KC_MS_UP:       if (MD.dy < 0) MD.dy = 0; break;
@@ -572,9 +566,8 @@ void mousekey_off(uint8_t code) {
         wheel_axes.repeat = 0;
     }
 
-#elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-    if (mk_speed != old_speed) adjust_speed();
-
+#elif MK_KIND(MK_TYPE_3_SPEED)
+    adjust_speed(); /* also (un)apply the bishop() adjustment */
 #endif
 }
 
