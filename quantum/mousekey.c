@@ -347,7 +347,46 @@ typedef struct {
 static x11_t mouse = MK_X11_MOUSE;
 static x11_t wheel = MK_X11_WHEEL;
 
-#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
+#elif MK_KIND(MK_TYPE_3_SPEED)
+
+enum { speed_unmod, speed_0, speed_1, speed_2, speed_COUNT };
+
+#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
+static uint8_t speed = speed_unmod;
+#    else
+static uint8_t speed = speed_1;
+#    endif
+
+typedef struct {
+    uint8_t interval[speed_COUNT];
+    uint8_t offset[speed_COUNT];
+} speed_t;
+
+#    define MK_3_FIELD(axes, field, op) /* clang-format off */ \
+         { MK_ ## axes ## _ ## field ## _UNMOD op \
+         , MK_ ## axes ## _ ## field ## _0 op \
+         , MK_ ## axes ## _ ## field ## _1 op \
+         , MK_ ## axes ## _ ## field ## _2 op \
+         } /* clang-format on */
+
+#    ifndef MK_3_SPEED_MOUSE
+#        define MK_3_SPEED_MOUSE /* clang-format off */ { \
+             .interval = MK_3_FIELD(C, INTERVAL, >> 2), \
+             .offset   = MK_3_FIELD(C, OFFSET, ) \
+         } /* clang-format on */
+#    endif
+
+#    ifndef MK_3_SPEED_WHEEL
+#        define MK_3_SPEED_WHEEL /* clang-format off */ { \
+             .interval = MK_3_FIELD(W, INTERVAL, >> 2), \
+             .offset   = MK_3_FIELD(W, OFFSET, ) \
+         } /* clang-format on */
+#    endif
+
+static speed_t mouse = MK_3_SPEED_MOUSE;
+static speed_t wheel = MK_3_SPEED_WHEEL;
+
+#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC, MK_TYPE_3_SPEED */
 
 #if MK_KIND(MK_TYPE_X11)
 
@@ -462,18 +501,6 @@ static bool kinetic_step(const x11_t* what, axes_t* axes) {
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
 
-enum { mkspd_unmod, mkspd_0, mkspd_1, mkspd_2, mkspd_COUNT };
-#    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-static uint8_t mk_speed = mkspd_unmod;
-#    else
-static uint8_t mk_speed = mkspd_1;
-#    endif
-
-static const uint16_t c_intervals[mkspd_COUNT] = {MK_C_INTERVAL_UNMOD, MK_C_INTERVAL_0, MK_C_INTERVAL_1, MK_C_INTERVAL_2};
-static const uint16_t w_intervals[mkspd_COUNT] = {MK_W_INTERVAL_UNMOD, MK_W_INTERVAL_0, MK_W_INTERVAL_1, MK_W_INTERVAL_2};
-static const uint8_t  c_offsets[mkspd_COUNT]   = {MK_C_OFFSET_UNMOD, MK_C_OFFSET_0, MK_C_OFFSET_1, MK_C_OFFSET_2};
-static const uint8_t  w_offsets[mkspd_COUNT]   = {MK_W_OFFSET_UNMOD, MK_W_OFFSET_0, MK_W_OFFSET_1, MK_W_OFFSET_2};
-
 static dxdy_t speed_step(const axes_t* axes, uint16_t interval) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
     if (timer_elapsed(axes->last_time) < interval) return dxdy_0;
@@ -481,8 +508,8 @@ static dxdy_t speed_step(const axes_t* axes, uint16_t interval) {
 }
 
 static void adjust_speed(void) {
-    mouse_axes.dxdy = bishop(mouse_axes.dxdy, c_offsets[mk_speed]);
-    wheel_axes.dxdy = bishop(wheel_axes.dxdy, w_offsets[mk_speed]);
+    mouse_axes.dxdy = bishop(mouse_axes.dxdy, mouse.offset[speed]);
+    wheel_axes.dxdy = bishop(wheel_axes.dxdy, wheel.offset[speed]);
 }
 
 #endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC || MK_TYPE_3_SPEED) */
@@ -518,7 +545,7 @@ void mousekey_on(uint8_t code) {
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
             accel_state |= MASK_ACCEL(code);
 #elif MK_KIND(MK_TYPE_3_SPEED)
-            mk_speed = (uint8_t)(mkspd_0 + code - KC_MS_ACCEL0);
+            speed = (uint8_t)(speed_0 + code - KC_MS_ACCEL0);
 #endif
             break;
     }
@@ -550,7 +577,7 @@ void mousekey_off(uint8_t code) {
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
             accel_state &= (uint8_t)~MASK_ACCEL(code);
 #elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-            mk_speed = mkspd_unmod;
+            speed = speed_unmod;
 #endif
             break;
     }
@@ -576,6 +603,10 @@ void mousekey_off(uint8_t code) {
 
 /**********************************************************************/
 
+#if MK_KIND(MK_TYPE_3_SPEED) && !defined(NO_PRINT) && !defined(USER_PRINT)
+static const char *speed_enum[speed_COUNT] = {"unmod", "0", "1", "2"};
+#endif
+
 static void send_dxdy(dxdy_t m, dxdy_t w) {
     if (debug_config.mouse) {
         xprintf(/* clang-format off */
@@ -587,7 +618,7 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
             ", repeat m:%2u w:%2u"
             ", accel: %03b"
 #elif MK_KIND(MK_TYPE_3_SPEED)
-            ", speed: %u"
+            ", speed: %s"
 #endif
             "\n"
 
@@ -599,7 +630,7 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
             , mouse_axes.repeat, wheel_axes.repeat
             , accel_state
 #elif MK_KIND(MK_TYPE_3_SPEED)
-            , mk_speed
+            , speed_enum[speed]
 #endif
             ); /* clang-format on */
     }
@@ -661,8 +692,8 @@ void mousekey_task(void) {
     dxdy_t w = kinetic_step(&wheel, &wheel_axes) ? bishop(wheel_axes.dxdy, wheel_unit()) : dxdy_0;
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
-    dxdy_t m = speed_step(&mouse_axes, c_intervals[mk_speed]);
-    dxdy_t w = speed_step(&wheel_axes, w_intervals[mk_speed]);
+    dxdy_t m = speed_step(&mouse_axes, (uint16_t)((uint16_t)mouse.interval[speed] << 2));
+    dxdy_t w = speed_step(&wheel_axes, (uint16_t)((uint16_t)wheel.interval[speed] << 2));
 
 #endif
     if (m.dx || m.dy || w.dx || w.dy) send_dxdy(m, w);
@@ -692,12 +723,28 @@ static void print_x11_t(uint8_t n, const char *name, const x11_t *what) {
 
         ); /* clang-format on */
 }
-#        endif /* MK_TYPE_X11 */
+
+#        elif MK_KIND(MK_TYPE_3_SPEED)
+static void print_3_speed(uint8_t n, char *name, const uint8_t what[speed_COUNT]) {
+    for (int i = 0; i < speed_COUNT; i++) {
+        xprintf("%u:	.%s[%s]: %u\n", n + i + 1, name, speed_enum[i], what[i]);
+    }
+}
+
+#        endif /* MK_TYPE_X11, MK_TYPE_3_SPEED */
 
 static void mousekey_param_print(void) {
 #        if MK_KIND(MK_TYPE_X11)
     print_x11_t(0, "mouse", &mouse);
     print_x11_t(4, "wheel", &wheel);
+
+#        elif MK_KIND(MK_TYPE_3_SPEED)
+    print("\tmouse\n");
+    print_3_speed(0, "interval(*4ms)", mouse.interval);
+    print_3_speed(4, "offset", mouse.offset);
+    print("\twheel\n");
+    print_3_speed(0, "interval(*4ms)", wheel.interval);
+    print_3_speed(4, "offset", wheel.offset);
 
 #        else
     print("no knobs sorry\n");
@@ -709,6 +756,9 @@ static void mousekey_console_help(void) {
     xprintf(/* clang-format off */
         "p:	print values\n"
         "d:	set defaults\n"
+#        if MK_KIND(MK_TYPE_3_SPEED)
+        "x:	toggle mouse/wheel axes\n"
+#        endif
         "up:	+1\n"
         "dn:	-1\n"
         "lt:	+10\n"
@@ -734,14 +784,56 @@ static void mousekey_console_help(void) {
 bool mousekey_console(uint8_t code) {
     static uint8_t  param = 0;
     static uint8_t *pp    = NULL;
-    static char *   desc  = NULL;
 
-#    if defined(NO_PRINT) || defined(USER_PRINT) /* -Wunused-parameter */
-    (void)desc;
+#    if MK_KIND(MK_TYPE_3_SPEED)
+    static bool axes = true;
 #    endif
 
-    int8_t change = 0;
+    bool switch_param(void) {
+#    if MK_KIND(MK_TYPE_3_SPEED)
+        pp = (void *)(axes ? &mouse : &wheel);
+#    endif
 
+        switch (param) {
+#    if MK_KIND(MK_TYPE_X11) /* clang-format off */
+#           define PARAM(n, v) case n: pp = &(v); break
+
+            PARAM(1, mouse.delay);
+            PARAM(2, mouse.interval);
+            PARAM(3, mouse.max_speed);
+            PARAM(4, mouse.time_to_max);
+            PARAM(5, wheel.delay);
+            PARAM(6, wheel.interval);
+            PARAM(7, wheel.max_speed);
+            PARAM(8, wheel.time_to_max);
+
+#    elif MK_KIND(MK_TYPE_3_SPEED)
+#           define PARAM(n, v) case n: pp += offsetof(speed_t, v); break
+
+            PARAM(1, interval[speed_unmod]);
+            PARAM(2, interval[speed_0]);
+            PARAM(3, interval[speed_1]);
+            PARAM(4, interval[speed_2]);
+            PARAM(5, offset[speed_unmod]);
+            PARAM(6, offset[speed_0]);
+            PARAM(7, offset[speed_1]);
+            PARAM(8, offset[speed_2]);
+
+#    endif /* MK_TYPE_X11, MK_TYPE_3_SPEED */
+#           undef PARAM /* clang-format on */
+
+            default:
+                param = 0;
+#    if MK_KIND(MK_TYPE_3_SPEED)
+                pp = NULL;
+#    endif
+                print("?\n");
+                return false;
+        }
+        return true;
+    }
+
+    int8_t change = 0;
     switch (code) {
         case KC_H:
         case KC_SLASH: /* ? */
@@ -757,7 +849,6 @@ bool mousekey_console(uint8_t code) {
             if (!param) return false;
             param = 0;
             pp    = NULL;
-            desc  = NULL;
             break;
 
         case KC_P:
@@ -767,29 +858,21 @@ bool mousekey_console(uint8_t code) {
 #    endif
             break;
 
+#    if MK_KIND(MK_TYPE_3_SPEED)
+        case KC_X:
+            axes = !axes;
+            if (switch_param()) {
+                print("x\n");
+            }
+            break;
+
+#    endif
+
         case KC_1 ... KC_0: /* KC_0 gives param = 10 */
             param = (uint8_t)(1 + code - KC_1);
-            switch (param) { /* clang-format off */
-#               define PARAM(n, v) case n: pp = &(v); desc = #v; break
-
-#    if MK_KIND(MK_TYPE_X11)
-                PARAM(1, mouse.delay);
-                PARAM(2, mouse.interval);
-                PARAM(3, mouse.max_speed);
-                PARAM(4, mouse.time_to_max);
-                PARAM(5, wheel.delay);
-                PARAM(6, wheel.interval);
-                PARAM(7, wheel.max_speed);
-                PARAM(8, wheel.time_to_max);
-#    endif /* MK_TYPE_X11 */
-
-#               undef PARAM /* clang-format on */
-                default:
-                    param = 0;
-                    print("?\n");
-                    break;
+            if (switch_param()) {
+                xprintf("%u\n", param);
             }
-            if (param) xprintf("%u\n", param);
             break;
 
             /* clang-format off */
@@ -804,6 +887,11 @@ bool mousekey_console(uint8_t code) {
 #    if MK_KIND(MK_TYPE_X11)
             mouse = (x11_t)MK_X11_MOUSE;
             wheel = (x11_t)MK_X11_WHEEL;
+
+#    elif MK_KIND(MK_TYPE_3_SPEED)
+            mouse = (speed_t)MK_3_SPEED_MOUSE;
+            wheel = (speed_t)MK_3_SPEED_WHEEL;
+
 #    endif /* MK_TYPE_X11 */
 
             print("defaults\n");
@@ -829,11 +917,32 @@ bool mousekey_console(uint8_t code) {
         }
     }
 
+#    if !defined(NO_PRINT) && !defined(USER_PRINT)
     if (param) {
-        xprintf("M%u:%s> ", param, desc ? desc : "???");
+        int i = param - 1;
+#        if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+        static const char *x11_field[4] = /* clang-format off */
+            {"delay", "interval", "max_speed", "time_to_max"};
+        xprintf(
+            "M%u:%s.%s> "
+            , param
+            , i & 4 ? "wheel" : "mouse"
+            , x11_field[i & 3]
+            ); /* clang-format on */
+#        elif MK_KIND(MK_TYPE_3_SPEED)
+        xprintf(/* clang-format off */
+            "M%u:%s.%s[%s]> "
+            , param
+            , axes ? "mouse" : "wheel"
+            , i & 4 ? "offset" : "interval"
+            , speed_enum[i & 3]
+            ); /* clang-format on */
+#        endif
     } else {
         print("M> ");
     }
+#    endif /* !NO_PRINT && !USER_PRINT */
+
     return true;
 }
 
