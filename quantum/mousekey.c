@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Jun Wako <wakojun@gmail.com>
+ * Copyright 2021 Liyang HU <qmk.tk@liyang.hu>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -236,13 +237,15 @@
 
 #pragma GCC diagnostic error "-Wextra"
 
-#define NO_FIELD(no_field)                                              \
-    _Pragma("GCC diagnostic push");                                     \
-    _Pragma("GCC diagnostic ignored \"-Wmissing-field-initializers\""); \
-    no_field;                                                           \
-    _Pragma("GCC diagnostic pop")
+/**********************************************************************/
 
-inline int8_t times_inv_sqrt2(int8_t x) {
+typedef struct {
+    int8_t dx, dy;
+} dxdy_t;
+
+static const dxdy_t dxdy_0; /* {}; dodge -Wmissing-field-initializers */
+
+inline static uint8_t div_sqrt2(uint8_t x) {
     // 181/256 is pretty close to 1/sqrt(2)
     // 0.70703125                 0.707106781
     // 1 too small for x=99 and x=198
@@ -250,12 +253,33 @@ inline int8_t times_inv_sqrt2(int8_t x) {
     return (x * 181) >> 8;
 }
 
-static report_mouse_t mouse_report = {0};
+#define signum(x) (typeof(x))(((x) > 0) - ((x) < 0))
 
-static void mousekey_debug(void);
+static dxdy_t bishop(dxdy_t d, uint8_t unit) {
+    uint8_t move = d.dx && d.dy ? div_sqrt2(unit) : unit;
+
+    /* diagonal move [1/sqrt(2)] */
+    /* valid only if |dx| ≡ |dy| */
+    /* which is true for us here */
+    /* ensure we move at least 1 */
+    if (move == 0) move = 1;
+
+    return (dxdy_t) /* clang-format off */ {
+        .dx = signum(d.dx) * move,
+        .dy = signum(d.dy) * move
+    }; /* clang-format on */
+}
+
+/**********************************************************************/
 
 typedef struct {
     uint16_t last_time;
+    /* dxdy is {,re}set by mousekey_o{n,ff}() to {±d,0}—but never updated
+     * by mousekey_task()—where `d` is usually 1, representing the resolved
+     * direction from the current state of KC_MS_{,WH_}{UP,DOWN,LEFT,RIGHT}.
+     *
+     * Except MK_TYPE_3_SPEED which uses d = speed_t.offset[speed]. */
+    dxdy_t dxdy;
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
     uint8_t repeat;
 #endif
@@ -270,6 +294,9 @@ static uint16_t mouse_timer = 0;
 #endif
 
 #define MASK_BTN(kc) MOUSE_BTN_MASK((kc) - (KC_MS_BTN1))
+static uint8_t btn_state = 0;
+
+/**********************************************************************/
 
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
 /* TODO: untangle MK_TYPE_KINETIC.
@@ -336,7 +363,7 @@ static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
 #    if MK_TYPE(MK_TYPE_X11)
         return (delta * what->max_speed);
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
-        return UINT16_MAX; /* will be clamp()'d */
+        return UINT16_MAX; /* will be clamped */
 #    endif
     } else if (repeat == 0) {
         return delta;
@@ -346,15 +373,6 @@ static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
         return (delta * what->max_speed * repeat) / what->time_to_max;
     }
 }
-
-static inline uint8_t clamp(uint8_t n, uint8_t min, uint8_t max) {
-    if (n < min) return min;
-    if (n > max) return max;
-    return n;
-}
-
-#    define move_unit() clamp(x11_unit(&mouse, mouse_axes.repeat, MOUSEKEY_MOVE_DELTA), 1, MOUSEKEY_MOVE_MAX)
-#    define wheel_unit() clamp(x11_unit(&wheel, wheel_axes.repeat, MOUSEKEY_WHEEL_DELTA), 1, MOUSEKEY_WHEEL_MAX)
 
 #elif MK_KIND(MK_TYPE_KINETIC)
 
@@ -415,64 +433,33 @@ static uint8_t wheel_unit(void) {
 
 #endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC) */
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_X11)
 
-void mousekey_task(void) {
-    // report cursor and scroll movement independently
-    report_mouse_t const tmpmr = mouse_report;
+static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t max) {
+    if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
 
-    mouse_report.x = 0;
-    mouse_report.y = 0;
-    mouse_report.v = 0;
-    mouse_report.h = 0;
+    uint16_t dur = axes->repeat ? what->interval : what->delay * 10;
+    if (timer_elapsed(axes->last_time) < dur) return dxdy_0;
 
-    if ((tmpmr.x || tmpmr.y) && timer_elapsed(mouse_axes.last_time) > (mouse_axes.repeat ? mouse.interval : mouse.delay * 10)) {
-        if (mouse_axes.repeat != UINT8_MAX) mouse_axes.repeat++;
-        if (tmpmr.x != 0) mouse_report.x = move_unit() * ((tmpmr.x > 0) ? 1 : -1);
-        if (tmpmr.y != 0) mouse_report.y = move_unit() * ((tmpmr.y > 0) ? 1 : -1);
+    if (axes->repeat < UINT8_MAX) axes->repeat++;
 
-        /* diagonal move [1/sqrt(2)] */
-        if (mouse_report.x && mouse_report.y) {
-            mouse_report.x = times_inv_sqrt2(mouse_report.x);
-            if (mouse_report.x == 0) {
-                mouse_report.x = 1;
-            }
-            mouse_report.y = times_inv_sqrt2(mouse_report.y);
-            if (mouse_report.y == 0) {
-                mouse_report.y = 1;
-            }
-        }
-    }
-
-#if MK_KIND(MK_TYPE_KINETIC)
-    /* XXX previously we just redefined wheel.interval as a float */
-    wheel.interval = (uint8_t)kinetic_wheel_interval;
-#endif
-    if ((tmpmr.v || tmpmr.h) && timer_elapsed(wheel_axes.last_time) > (wheel_axes.repeat ? wheel.interval : wheel.delay * 10)) {
-        if (wheel_axes.repeat != UINT8_MAX) wheel_axes.repeat++;
-        if (tmpmr.v != 0) mouse_report.v = wheel_unit() * ((tmpmr.v > 0) ? 1 : -1);
-        if (tmpmr.h != 0) mouse_report.h = wheel_unit() * ((tmpmr.h > 0) ? 1 : -1);
-
-        /* diagonal move [1/sqrt(2)] */
-        if (mouse_report.v && mouse_report.h) {
-            mouse_report.v = times_inv_sqrt2(mouse_report.v);
-            if (mouse_report.v == 0) {
-                mouse_report.v = 1;
-            }
-            mouse_report.h = times_inv_sqrt2(mouse_report.h);
-            if (mouse_report.h == 0) {
-                mouse_report.h = 1;
-            }
-        }
-    }
-
-    if (mouse_report.x || mouse_report.y || mouse_report.v || mouse_report.h) mousekey_send();
-    mouse_report = tmpmr;
+    uint16_t unit = x11_unit(what, axes->repeat, delta);
+    return bishop(axes->dxdy, unit > max ? max : unit);
 }
 
-#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC */
+#elif MK_KIND(MK_TYPE_KINETIC)
 
-#if MK_KIND(MK_TYPE_3_SPEED)
+static bool kinetic_step(const x11_t* what, axes_t* axes) {
+    if (!axes->dxdy.dx && !axes->dxdy.dy) return false;
+
+    uint16_t dur = axes->repeat ? what->interval : what->delay * 10;
+    if (timer_elapsed(axes->last_time) < dur) return false;
+
+    if (axes->repeat < UINT8_MAX) axes->repeat++;
+    return true;
+}
+
+#elif MK_KIND(MK_TYPE_3_SPEED)
 
 enum { mkspd_unmod, mkspd_0, mkspd_1, mkspd_2, mkspd_COUNT };
 #    if MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
@@ -481,63 +468,28 @@ static uint8_t mk_speed = mkspd_unmod;
 static uint8_t mk_speed = mkspd_1;
 #    endif
 
-static const uint16_t c_offsets[mkspd_COUNT]   = {MK_C_OFFSET_UNMOD, MK_C_OFFSET_0, MK_C_OFFSET_1, MK_C_OFFSET_2};
 static const uint16_t c_intervals[mkspd_COUNT] = {MK_C_INTERVAL_UNMOD, MK_C_INTERVAL_0, MK_C_INTERVAL_1, MK_C_INTERVAL_2};
-static const uint16_t w_offsets[mkspd_COUNT]   = {MK_W_OFFSET_UNMOD, MK_W_OFFSET_0, MK_W_OFFSET_1, MK_W_OFFSET_2};
 static const uint16_t w_intervals[mkspd_COUNT] = {MK_W_INTERVAL_UNMOD, MK_W_INTERVAL_0, MK_W_INTERVAL_1, MK_W_INTERVAL_2};
+static const uint8_t  c_offsets[mkspd_COUNT]   = {MK_C_OFFSET_UNMOD, MK_C_OFFSET_0, MK_C_OFFSET_1, MK_C_OFFSET_2};
+static const uint8_t  w_offsets[mkspd_COUNT]   = {MK_W_OFFSET_UNMOD, MK_W_OFFSET_0, MK_W_OFFSET_1, MK_W_OFFSET_2};
 
-void mousekey_task(void) {
-    // report cursor and scroll movement independently
-    report_mouse_t const tmpmr = mouse_report;
-    mouse_report.x             = 0;
-    mouse_report.y             = 0;
-    mouse_report.v             = 0;
-    mouse_report.h             = 0;
-
-    if ((tmpmr.x || tmpmr.y) && timer_elapsed(mouse_axes.last_time) > c_intervals[mk_speed]) {
-        mouse_report.x = tmpmr.x;
-        mouse_report.y = tmpmr.y;
-    }
-    if ((tmpmr.h || tmpmr.v) && timer_elapsed(wheel_axes.last_time) > w_intervals[mk_speed]) {
-        mouse_report.v = tmpmr.v;
-        mouse_report.h = tmpmr.h;
-    }
-
-    if (mouse_report.x || mouse_report.y || mouse_report.v || mouse_report.h) mousekey_send();
-    mouse_report = tmpmr;
+static dxdy_t speed_step(const axes_t* axes, uint16_t interval) {
+    if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
+    if (timer_elapsed(axes->last_time) < interval) return dxdy_0;
+    return axes->dxdy;
 }
 
-void adjust_speed(void) {
-    uint16_t const c_offset = c_offsets[mk_speed];
-    uint16_t const w_offset = w_offsets[mk_speed];
-    if (mouse_report.x > 0) mouse_report.x = c_offset;
-    if (mouse_report.x < 0) mouse_report.x = c_offset * -1;
-    if (mouse_report.y > 0) mouse_report.y = c_offset;
-    if (mouse_report.y < 0) mouse_report.y = c_offset * -1;
-    if (mouse_report.h > 0) mouse_report.h = w_offset;
-    if (mouse_report.h < 0) mouse_report.h = w_offset * -1;
-    if (mouse_report.v > 0) mouse_report.v = w_offset;
-    if (mouse_report.v < 0) mouse_report.v = w_offset * -1;
-    // adjust for diagonals
-    if (mouse_report.x && mouse_report.y) {
-        mouse_report.x = times_inv_sqrt2(mouse_report.x);
-        if (mouse_report.x == 0) {
-            mouse_report.x = 1;
-        }
-        mouse_report.y = times_inv_sqrt2(mouse_report.y);
-        if (mouse_report.y == 0) {
-            mouse_report.y = 1;
-        }
-    }
-    if (mouse_report.h && mouse_report.v) {
-        mouse_report.h = times_inv_sqrt2(mouse_report.h);
-        mouse_report.v = times_inv_sqrt2(mouse_report.v);
-    }
+static void adjust_speed(void) {
+    mouse_axes.dxdy = bishop(mouse_axes.dxdy, c_offsets[mk_speed]);
+    wheel_axes.dxdy = bishop(wheel_axes.dxdy, w_offsets[mk_speed]);
 }
 
-#endif /* MK_TYPE_3_SPEED */
+#endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC || MK_TYPE_3_SPEED) */
 
-#define MR mouse_report
+/**********************************************************************/
+
+#define MD mouse_axes.dxdy
+#define WD wheel_axes.dxdy
 
 void mousekey_on(uint8_t code) {
 #if MK_KIND(MK_TYPE_3_SPEED)
@@ -547,31 +499,20 @@ void mousekey_on(uint8_t code) {
 #endif
 
     switch (code) {
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-#    define MU move_unit()
-#    define WU wheel_unit()
-#elif MK_KIND(MK_TYPE_3_SPEED)
-#    define MU c_offsets[mk_speed]
-#    define WU w_offsets[mk_speed]
-#endif
-
             /* clang-format off */
-        case KC_MS_UP:       MR.y = -MU; break;
-        case KC_MS_DOWN:     MR.y = +MU; break;
-        case KC_MS_LEFT:     MR.x = -MU; break;
-        case KC_MS_RIGHT:    MR.x = +MU; break;
+        case KC_MS_UP:       MD.dy = -1; break;
+        case KC_MS_DOWN:     MD.dy = +1; break;
+        case KC_MS_LEFT:     MD.dx = -1; break;
+        case KC_MS_RIGHT:    MD.dx = +1; break;
 
-        case KC_MS_WH_UP:    MR.v = +WU; break;
-        case KC_MS_WH_DOWN:  MR.v = -WU; break;
-        case KC_MS_WH_LEFT:  MR.h = -WU; break;
-        case KC_MS_WH_RIGHT: MR.h = +WU; break;
+        case KC_MS_WH_UP:    WD.dy = +1; break;
+        case KC_MS_WH_DOWN:  WD.dy = -1; break;
+        case KC_MS_WH_LEFT:  WD.dx = -1; break;
+        case KC_MS_WH_RIGHT: WD.dx = +1; break;
             /* clang-format on */
 
-#undef MU
-#undef WU
-
         case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
-            mouse_report.buttons |= MASK_BTN(code);
+            btn_state |= MASK_BTN(code);
             break;
 
         case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
@@ -595,19 +536,19 @@ void mousekey_off(uint8_t code) {
 
     switch (code) {
             /* clang-format off */
-        case KC_MS_UP:       if (MR.y < 0) MR.y = 0; break;
-        case KC_MS_DOWN:     if (MR.y > 0) MR.y = 0; break;
-        case KC_MS_LEFT:     if (MR.x < 0) MR.x = 0; break;
-        case KC_MS_RIGHT:    if (MR.x > 0) MR.x = 0; break;
+        case KC_MS_UP:       if (MD.dy < 0) MD.dy = 0; break;
+        case KC_MS_DOWN:     if (MD.dy > 0) MD.dy = 0; break;
+        case KC_MS_LEFT:     if (MD.dx < 0) MD.dx = 0; break;
+        case KC_MS_RIGHT:    if (MD.dx > 0) MD.dx = 0; break;
 
-        case KC_MS_WH_UP:    if (MR.v > 0) MR.v = 0; break;
-        case KC_MS_WH_DOWN:  if (MR.v < 0) MR.v = 0; break;
-        case KC_MS_WH_LEFT:  if (MR.h < 0) MR.h = 0; break;
-        case KC_MS_WH_RIGHT: if (MR.h > 0) MR.h = 0; break;
+        case KC_MS_WH_UP:    if (WD.dy > 0) WD.dy = 0; break;
+        case KC_MS_WH_DOWN:  if (WD.dy < 0) WD.dy = 0; break;
+        case KC_MS_WH_LEFT:  if (WD.dx < 0) WD.dx = 0; break;
+        case KC_MS_WH_RIGHT: if (WD.dx > 0) WD.dx = 0; break;
             /* clang-format on */
 
         case KC_MS_BTN1 ... KC_MS_BTN8: /* Cf. IS_MOUSEKEY_BUTTON() */
-            mouse_report.buttons &= ~MASK_BTN(code);
+            btn_state &= ~MASK_BTN(code);
             break;
 
         case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
@@ -620,13 +561,13 @@ void mousekey_off(uint8_t code) {
     }
 
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-    if (MR.x == 0 && MR.y == 0) {
+    if (MD.dx == 0 && MD.dy == 0) {
         mouse_axes.repeat = 0;
 #    if MK_KIND(MK_TYPE_KINETIC)
         mouse_timer = 0;
 #    endif
     }
-    if (MR.h == 0 && MR.v == 0) {
+    if (WD.dx == 0 && WD.dy == 0) {
         wheel_axes.repeat = 0;
     }
 
@@ -636,48 +577,101 @@ void mousekey_off(uint8_t code) {
 #endif
 }
 
-#undef MR
+#undef MD
+#undef WD
+
+/**********************************************************************/
+
+static void send_dxdy(dxdy_t m, dxdy_t w) {
+    if (debug_config.mouse) {
+        xprintf(/* clang-format off */
+            "mousekey btn: %08b"
+            ", mouse: %3d %3d"
+            ", wheel: %3d %3d"
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+            ", repeat m:%2u w:%2u"
+            ", accel: %03b"
+#elif MK_KIND(MK_TYPE_3_SPEED)
+            ", speed: %u"
+#endif
+            "\n"
+
+            , btn_state
+            , m.dx, m.dy
+            , w.dx, w.dy
+
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+            , mouse_axes.repeat, wheel_axes.repeat
+            , accel_state
+#elif MK_KIND(MK_TYPE_3_SPEED)
+            , mk_speed
+#endif
+            ); /* clang-format on */
+    }
+
+    uint16_t time = timer_read();
+    if (m.dx || m.dy) mouse_axes.last_time = time;
+    if (w.dx || w.dy) wheel_axes.last_time = time;
+
+    report_mouse_t report = /* clang-format off */ {
+        .buttons = btn_state,
+        .x = m.dx,
+        .y = m.dy,
+        .h = w.dx,
+        .v = w.dy
+    }; /* clang-format on */
+    host_mouse_send(&report);
+}
 
 void mousekey_send(void) {
-    mousekey_debug();
-    uint16_t time = timer_read();
-    if (mouse_report.x || mouse_report.y) mouse_axes.last_time = time;
-    if (mouse_report.v || mouse_report.h) wheel_axes.last_time = time;
-    host_mouse_send(&mouse_report);
+    /* XXX: sends `report_mouse_t` immediately and
+     * ignores movement algorithm's delay/interval &c.
+     * Arguably the wrong external API. Deprecate w/ `mousekey_task()`?
+     *
+     * Seems to be used to send `btn_state` updates only?
+     * In which case we should `send_dxdy(dxdy_0, dxdy_0)`.
+     *
+     * Here with the old behaviour in any case. */
+    send_dxdy(mouse_axes.dxdy, wheel_axes.dxdy);
 }
 
 /* FIXME: what's the use-case for this? */
 void mousekey_clear(void) {
     /* old behaviour was to preserve .last_time */
-    NO_FIELD(mouse_report = (report_mouse_t){});
+    btn_state = 0;
 #if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
     accel_state = 0;
 
     mouse_axes.repeat = 0;
     wheel_axes.repeat = 0;
 #endif
+    mouse_axes.dxdy = dxdy_0;
+    wheel_axes.dxdy = dxdy_0;
 }
 
-static void mousekey_debug(void) {
-    if (!debug_mouse) return;
+/**********************************************************************/
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-    print("mousekey [btn|x y v h](rep/acl): [");
-    print_hex8(mouse_report.buttons);
-    print("|");
-    print_decs(mouse_report.x);
-    print(" ");
-    print_decs(mouse_report.y);
-    print(" ");
-    print_decs(mouse_report.v);
-    print(" ");
-    print_decs(mouse_report.h);
-    print("](");
-    print_dec(mouse_axes.repeat);
-    print("/");
-    print_dec(accel_state);
-    print(")\n");
+/* Called regularly from keyboard_task(): compute mouse/wheel displacement,
+ * speed, acceleration, &c. here, and host_mouse_send() any movements. */
+void mousekey_task(void) {
+#if MK_KIND(MK_TYPE_X11)
+    dxdy_t m = x11_step(&mouse, &mouse_axes, MOUSEKEY_MOVE_DELTA, MOUSEKEY_MOVE_MAX);
+    dxdy_t w = x11_step(&wheel, &wheel_axes, MOUSEKEY_WHEEL_DELTA, MOUSEKEY_WHEEL_MAX);
+
+#elif MK_KIND(MK_TYPE_KINETIC)
+    /* TODO: clean up {move,wheel}_unit() & fold into kinetic_step() */
+    dxdy_t m = kinetic_step(&mouse, &mouse_axes) ? bishop(mouse_axes.dxdy, move_unit()) : dxdy_0;
+    /* XXX previously we just redefined wheel.interval as a float */
+    wheel.interval = (uint8_t)kinetic_wheel_interval;
+    dxdy_t w = kinetic_step(&wheel, &wheel_axes) ? bishop(wheel_axes.dxdy, wheel_unit()) : dxdy_0;
+
+#elif MK_KIND(MK_TYPE_3_SPEED)
+    dxdy_t m = speed_step(&mouse_axes, c_intervals[mk_speed]);
+    dxdy_t w = speed_step(&wheel_axes, w_intervals[mk_speed]);
+
 #endif
+    if (m.dx || m.dy || w.dx || w.dy) send_dxdy(m, w);
 }
 
 /***********************************************************
