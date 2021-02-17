@@ -478,8 +478,10 @@ static uint8_t wheel_unit(void) {
 static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t max) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
 
+    uint16_t now = timer_read();
     uint16_t dur = axes->repeat ? what->interval : (uint16_t)((uint16_t)what->delay * 10);
-    if (timer_elapsed(axes->last_time) < dur) return dxdy_0;
+    if (TIMER_DIFF_16(now, axes->last_time) < dur) return dxdy_0;
+    axes->last_time = now;
 
     if (axes->repeat < UINT8_MAX) axes->repeat++;
 
@@ -492,8 +494,10 @@ static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t m
 static bool kinetic_step(const x11_t* what, axes_t* axes) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return false;
 
+    uint16_t now = timer_read();
     uint16_t dur = axes->repeat ? what->interval : (uint16_t)what->delay * 10;
-    if (timer_elapsed(axes->last_time) < dur) return false;
+    if (TIMER_DIFF_16(now, axes->last_time) < dur) return false;
+    axes->last_time = now;
 
     if (axes->repeat < UINT8_MAX) axes->repeat++;
     return true;
@@ -501,9 +505,11 @@ static bool kinetic_step(const x11_t* what, axes_t* axes) {
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
 
-static dxdy_t speed_step(const axes_t* axes, uint16_t interval) {
+static dxdy_t speed_step(axes_t *axes, uint16_t interval) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
-    if (timer_elapsed(axes->last_time) < interval) return dxdy_0;
+    uint16_t now = timer_read();
+    if (TIMER_DIFF_16(now, axes->last_time) < interval) return dxdy_0;
+    axes->last_time = now;
     return axes->dxdy;
 }
 
@@ -523,6 +529,9 @@ void mousekey_on(uint8_t code) {
 #if MK_KIND(MK_TYPE_KINETIC)
     if (mouse_timer == 0) mouse_timer = timer_read();
 #endif
+
+    bool m_off = !MD.dx && !MD.dy;
+    bool w_off = !WD.dx && !WD.dy;
 
     switch (code) {
             /* clang-format off */
@@ -549,6 +558,9 @@ void mousekey_on(uint8_t code) {
 #endif
             break;
     }
+
+    if (m_off && (MD.dx || MD.dy)) mouse_axes.last_time = timer_read();
+    if (w_off && (WD.dx || WD.dy)) wheel_axes.last_time = timer_read();
 
 #if MK_KIND(MK_TYPE_3_SPEED)
     adjust_speed();
@@ -634,10 +646,6 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
 #endif
             ); /* clang-format on */
     }
-
-    uint16_t time = timer_read();
-    if (m.dx || m.dy) mouse_axes.last_time = time;
-    if (w.dx || w.dy) wheel_axes.last_time = time;
 
     report_mouse_t report = /* clang-format off */ {
         .buttons = btn_state,
