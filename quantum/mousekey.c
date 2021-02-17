@@ -649,17 +649,15 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
     host_mouse_send(&report);
 }
 
-void mousekey_send(void) {
-    /* XXX: sends `report_mouse_t` immediately and
-     * ignores movement algorithm's delay/interval &c.
-     * Arguably the wrong external API. Deprecate w/ `mousekey_task()`?
-     *
-     * Seems to be used to send `btn_state` updates only?
-     * In which case we should `send_dxdy(dxdy_0, dxdy_0)`.
-     *
-     * Here with the old behaviour in any case. */
-    send_dxdy(mouse_axes.dxdy, wheel_axes.dxdy);
-}
+/*
+ * Send btn_state (only) immediately.
+ *
+ * Call this if you're so excited that you simply cannot wait until
+ * the next regularly scheduled mousekey_task() to notify the host.
+ *
+ * This does not send any mouse/wheel movements.
+ */
+void mousekey_send(void) { send_dxdy(dxdy_0, dxdy_0); }
 
 /* FIXME: what's the use-case for this? */
 void mousekey_clear(void) {
