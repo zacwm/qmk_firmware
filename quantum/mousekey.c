@@ -18,6 +18,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "keycode.h"
 #include "host.h"
 #include "timer.h"
@@ -117,6 +118,34 @@
 #        define MOUSEKEY_WHEEL_TIME_TO_MAX 40
 #    endif
 
+#elif MK_KIND(MK_TYPE_KINETIC)
+
+#    ifndef MK_KINETIC_MOUSE_ACCN
+#        define MK_KINETIC_MOUSE_ACCN 0x18
+#    endif
+#    ifndef MK_KINETIC_MOUSE_DRAG
+#        define MK_KINETIC_MOUSE_DRAG 0x10
+#    endif
+#    ifndef MK_KINETIC_MOUSE_FRIC
+#        define MK_KINETIC_MOUSE_FRIC 0x20
+#    endif
+#    ifndef MK_KINETIC_MOUSE_MAXS
+#        define MK_KINETIC_MOUSE_MAXS 0x80
+#    endif
+
+#    ifndef MK_KINETIC_WHEEL_ACCN
+#        define MK_KINETIC_WHEEL_ACCN 0x10
+#    endif
+#    ifndef MK_KINETIC_WHEEL_DRAG
+#        define MK_KINETIC_WHEEL_DRAG 0x08
+#    endif
+#    ifndef MK_KINETIC_WHEEL_FRIC
+#        define MK_KINETIC_WHEEL_FRIC 0x08
+#    endif
+#    ifndef MK_KINETIC_WHEEL_MAXS
+#        define MK_KINETIC_WHEEL_MAXS 0x0c
+#    endif
+
 #elif MK_KIND(MK_TYPE_3_SPEED)
 
 #    ifndef MK_C_OFFSET_UNMOD
@@ -169,66 +198,6 @@
 #        define MK_W_INTERVAL_2 20
 #    endif
 
-#elif MK_KIND(MK_TYPE_KINETIC)
-
-/* TODO: Rename these four! */
-/* Names coincide with those of MK_TYPE_X11 but have different semantics. */
-#    ifndef MOUSEKEY_MOVE_MAX
-#        define MOUSEKEY_MOVE_MAX INT8_MAX
-#    elif MOUSEKEY_MOVE_MAX > INT8_MAX
-#        error MOUSEKEY_MOVE_MAX cannot be greater than INT8_MAX
-#    endif
-#    ifndef MOUSEKEY_MOVE_DELTA
-#        define MOUSEKEY_MOVE_DELTA 25
-#    endif
-#    ifndef MOUSEKEY_DELAY
-#        define MOUSEKEY_DELAY 8
-#    endif
-#    ifndef MOUSEKEY_INTERVAL
-#        define MOUSEKEY_INTERVAL 8
-#    endif
-
-/* Same semantics, maybe? */
-#    ifndef MOUSEKEY_MAX_SPEED
-#        define MOUSEKEY_MAX_SPEED 10
-#    endif
-#    ifndef MOUSEKEY_WHEEL_MAX_SPEED
-#        define MOUSEKEY_WHEEL_MAX_SPEED 8
-#    endif
-
-#    ifndef MOUSEKEY_TIME_TO_MAX
-#        define MOUSEKEY_TIME_TO_MAX 20
-#    endif
-#    ifndef MOUSEKEY_WHEEL_TIME_TO_MAX
-#        define MOUSEKEY_WHEEL_TIME_TO_MAX 40
-#    endif
-
-/* Unique to MK_TYPE_KINETIC */
-#    ifndef MOUSEKEY_INITIAL_SPEED
-#        define MOUSEKEY_INITIAL_SPEED 100
-#    endif
-#    ifndef MOUSEKEY_BASE_SPEED
-#        define MOUSEKEY_BASE_SPEED 1000
-#    endif
-#    ifndef MOUSEKEY_DECELERATED_SPEED
-#        define MOUSEKEY_DECELERATED_SPEED 400
-#    endif
-#    ifndef MOUSEKEY_ACCELERATED_SPEED
-#        define MOUSEKEY_ACCELERATED_SPEED 3000
-#    endif
-#    ifndef MOUSEKEY_WHEEL_INITIAL_MOVEMENTS
-#        define MOUSEKEY_WHEEL_INITIAL_MOVEMENTS 16
-#    endif
-#    ifndef MOUSEKEY_WHEEL_BASE_MOVEMENTS
-#        define MOUSEKEY_WHEEL_BASE_MOVEMENTS 32
-#    endif
-#    ifndef MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS
-#        define MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS 48
-#    endif
-#    ifndef MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS
-#        define MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS 8
-#    endif
-
 #else
 #    error "Unknown MK_VARIANT"
 #endif /* MK_VARIANT */
@@ -256,6 +225,7 @@ inline static uint8_t div_sqrt2(uint8_t x) {
 
 #define signum(x) (typeof(x))(((x) > 0) - ((x) < 0))
 
+#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_3_SPEED)
 static dxdy_t bishop(dxdy_t d, uint8_t unit) {
     uint8_t move = d.dx && d.dy ? div_sqrt2(unit) : unit;
 
@@ -271,6 +241,43 @@ static dxdy_t bishop(dxdy_t d, uint8_t unit) {
     }; /* clang-format on */
 }
 
+#elif MK_KIND(MK_TYPE_KINETIC)
+static inline uint8_t cardinal(dxdy_t d, uint8_t unit) {
+    if (!unit) return 0;
+    if (!d.dx && !d.dy) return 0;
+    if (!d.dx || !d.dy) return unit;
+    uint8_t move = div_sqrt2(unit);
+    return move ? move : 1;
+}
+
+/* Saturated signed addition ⊆ `[MIN+1, MAX]`. */
+static inline int16_t ssadd16(int16_t a, int16_t b) {
+    bool    pos = a > 0; /* note: MAX + 2 ≡ MIN + 1 */
+    int16_t sat = (int16_t)(INT16_MAX + (pos ? 0 : 2));
+    return (pos == (b < sat - a)) ? (int16_t)(a + b) : sat;
+}
+
+/* TODO Try these:
+ * __builtin_add_overflow from GCC 5.5.0 onwards
+ * __builtin_add_overflow_p from GCC 7.1.0 onwards
+ */
+
+/* Fixed-point normⁿ: discard `n` bits & round towards ∓, nearest, 0, ∞ */
+#    define NORM_NEGA(n, x) ((x) >> (n))
+#    define NORM_POSI(n, x) (((x) + ((typeof(x))1 << (n)) - 1) >> (n))
+#    define NORM_NEAR(n, x) (((x) + ((typeof(x))1 << ((n)-1))) >> (n))
+#    define NORM_ZERO(n, x) NORM_TO(< 0, (n), (x))
+#    define NORM_INFI(n, x) NORM_TO(> 0, (n), (x))
+
+#    define NORM_TO(op, n, x)                                 \
+        ({                                                    \
+            typeof(x) __x__ = (x);                            \
+            if (__x__ op) __x__ += ((typeof(x))1 << (n)) - 1; \
+            __x__ >> (n);                                     \
+        })
+
+#endif
+
 /**********************************************************************/
 
 typedef struct {
@@ -281,27 +288,23 @@ typedef struct {
      *
      * Except MK_TYPE_3_SPEED which uses d = speed_t.offset[speed]. */
     dxdy_t dxdy;
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_X11)
     uint8_t repeat;
+#elif MK_KIND(MK_TYPE_KINETIC)
+    dxdy_t  rem;
+    int16_t v_x, v_y; /* velocity */
 #endif
 } axes_t;
 
 static axes_t mouse_axes;
 static axes_t wheel_axes;
 
-#if MK_KIND(MK_TYPE_KINETIC)
-/* XXX: overflows if key held down > 65s. */
-static uint16_t mouse_timer = 0;
-#endif
-
 #define MASK_BTN(kc) (uint8_t) MOUSE_BTN_MASK((kc) - (KC_MS_BTN1))
 static uint8_t btn_state = 0;
 
 /**********************************************************************/
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-/* TODO: untangle MK_TYPE_KINETIC.
- * Currently shares config/state w/ X11 but probably shouldn't. */
+#if MK_KIND(MK_TYPE_X11)
 
 #    define MASK_ACCEL(kc) (uint8_t)(1 << ((kc) - (KC_MS_ACCEL0)))
 static uint8_t accel_state = 0;
@@ -347,6 +350,92 @@ typedef struct {
 static x11_t mouse = MK_X11_MOUSE;
 static x11_t wheel = MK_X11_WHEEL;
 
+#elif MK_KIND(MK_TYPE_KINETIC)
+
+/*
+ * Kinetic movement: cursor follows classical mechanics with
+ * fluid (but not viscous) drag and Coulombian kinetic friction.
+ *
+ * Parameters:
+ *
+ *  accn: acceleration when `key_down`
+ *  drag: drag coefficient
+ *  fric: friction coefficient
+ *  maxs: max speed in `report_mouse_t` units / 15ms
+ *
+ * Non-linear ODE (Riccati w/ q₁ = 0) model:
+ *
+ *  a(t) = fric + (key_down(t) ? diagonal(t) ? accn/√2 : accn : 0)
+ *  dv(t)/dt = dir(t) × a(t) - sgn(v(t)) × (fric + drag × v(t)²)
+ *
+ * where `v(t)` is velocity, with `dir(t)` ∈ {0,±1}, `key_down(t)`, and
+ * `diagonal(t)` corresponding to the state of the mousekey arrows.
+ *
+ * Note the `fric` term in the definition of `a(t)`, such that we
+ * are _barely_ able to overcome friction when `accn` is set to 0.
+ * This feels like the more intuitive behaviour for the end-user,
+ * rather than requiring `accn > fric` for any acceleration at all.
+ *
+ * For `v(t) > 0`, `a(t) - fric = accn`, and starting with `v(0) = 0`,
+ * there is a closed-form solution for `v(t)`:
+ *
+ *  v(t) = √(accn/drag) × tanh(√(accn × drag) × t)
+ *
+ * Numerical approximation:
+ *
+ * Playing fast & loose with the Euler method, we can rewrite
+ * the above as a recurrence relation with time step `dt`:
+ *
+ *  v(t+dt) = v(t) + a(t) × dt
+ *      - sgn(v) × (fric + drag × v(t)²) × dt
+ *
+ * from which we derive the displacement for the current step:
+ *
+ *  ds(t) = ½(v(t+dt) + v(t)) × dt
+ *
+ * We scale this by `maxs` to give `report_mouse_t` units.
+ *
+ * References:
+ *
+ *  https://en.wikipedia.org/wiki/Drag_equation
+ *  https://en.wikipedia.org/wiki/Coulomb_damping
+ *  https://en.wikipedia.org/wiki/Ordinary_differential_equation
+ *  https://en.wikipedia.org/wiki/Euler_method
+ *  https://en.wikipedia.org/wiki/Riccati_equation with q₁ = 0
+ *  https://www.wolframalpha.com/ solve dv/dt = a - d × v(t)²; v(0) = 0
+ */
+
+typedef struct {
+    uint8_t accn; /* L×T⁻² */
+    uint8_t drag; /* L⁻¹ */
+    uint8_t fric; /* L×T⁻² */
+    uint8_t maxs; /* `report_mouse_t` units per 15ms */
+} kinetic_t;
+
+#    ifndef MK_KINETIC_MOUSE
+#        define MK_KINETIC_MOUSE /* clang-format off */ \
+             { .accn = MK_KINETIC_MOUSE_ACCN \
+             , .drag = MK_KINETIC_MOUSE_DRAG \
+             , .fric = MK_KINETIC_MOUSE_FRIC \
+             , .maxs = MK_KINETIC_MOUSE_MAXS \
+             } /* clang-format on */
+#    endif
+
+#    ifndef MK_KINETIC_WHEEL
+#        define MK_KINETIC_WHEEL /* clang-format off */ \
+             { .accn = MK_KINETIC_WHEEL_ACCN \
+             , .drag = MK_KINETIC_WHEEL_DRAG \
+             , .fric = MK_KINETIC_WHEEL_FRIC \
+             , .maxs = MK_KINETIC_WHEEL_MAXS \
+             } /* clang-format on */
+#    endif
+
+static kinetic_t mouse = MK_KINETIC_MOUSE;
+static kinetic_t wheel = MK_KINETIC_WHEEL;
+
+#    define MK_KINETIC_EXPS 8
+static uint8_t   exps  = MK_KINETIC_EXPS;
+
 #elif MK_KIND(MK_TYPE_3_SPEED)
 
 enum { speed_unmod, speed_0, speed_1, speed_2, speed_COUNT };
@@ -386,7 +475,7 @@ typedef struct {
 static speed_t mouse = MK_3_SPEED_MOUSE;
 static speed_t wheel = MK_3_SPEED_WHEEL;
 
-#endif /* MK_TYPE_X11 || MK_TYPE_KINETIC, MK_TYPE_3_SPEED */
+#endif /* MK_TYPE_X11, MK_TYPE_KINETIC, MK_TYPE_3_SPEED */
 
 #if MK_KIND(MK_TYPE_X11)
 
@@ -414,67 +503,6 @@ static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
     }
 }
 
-#elif MK_KIND(MK_TYPE_KINETIC)
-
-/*
- * Kinetic movement  acceleration algorithm
- *
- *  current speed = I + A * T/50 + A * 0.5 * T^2 | maximum B
- *
- * T: time since the mouse movement started
- * I: initial speed at time 0
- * A: acceleration
- * B: base mouse travel speed
- */
-
-static uint8_t move_unit(void) {
-    float speed = MOUSEKEY_INITIAL_SPEED;
-
-    if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
-        speed = MOUSEKEY_DECELERATED_SPEED;
-    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
-        speed = MOUSEKEY_ACCELERATED_SPEED;
-    } else if (mouse_axes.repeat && mouse_timer) {
-        const float time_elapsed = timer_elapsed(mouse_timer) / 50;
-        speed                    = MOUSEKEY_INITIAL_SPEED + MOUSEKEY_MOVE_DELTA * time_elapsed + MOUSEKEY_MOVE_DELTA * 0.5 * time_elapsed * time_elapsed;
-
-        speed = speed > MOUSEKEY_BASE_SPEED ? MOUSEKEY_BASE_SPEED : speed;
-    }
-
-    /* convert speed to USB mouse speed 1 to 127 */
-    speed = (uint8_t)(speed / (1000.0f / mouse.interval));
-    speed = speed < 1 ? 1 : speed;
-
-    return speed > MOUSEKEY_MOVE_MAX ? MOUSEKEY_MOVE_MAX : (uint8_t)speed;
-}
-
-/* XXX: was redefⁿ of MK_TYPE_X11's mk_wheel_interval as float */
-static float kinetic_wheel_interval = 1000.0f / MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
-
-static uint8_t wheel_unit(void) {
-    float speed = MOUSEKEY_WHEEL_INITIAL_MOVEMENTS;
-
-    if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
-        speed = MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS;
-    } else if (accel_state & MASK_ACCEL(KC_MS_ACCEL2)) {
-        speed = MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS;
-    } else if (wheel_axes.repeat /* XXX: was mouse_axes.repeat */ && mouse_timer) {
-        if (kinetic_wheel_interval != MOUSEKEY_WHEEL_BASE_MOVEMENTS) {
-            const float time_elapsed = timer_elapsed(mouse_timer) / 50;
-            speed                    = MOUSEKEY_WHEEL_INITIAL_MOVEMENTS + 1 * time_elapsed + 1 * 0.5 * time_elapsed * time_elapsed;
-        }
-        speed = speed > MOUSEKEY_WHEEL_BASE_MOVEMENTS ? MOUSEKEY_WHEEL_BASE_MOVEMENTS : speed;
-    }
-
-    kinetic_wheel_interval = 1000.0f / speed;
-
-    return 1; /* XXX: wat. */
-}
-
-#endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC) */
-
-#if MK_KIND(MK_TYPE_X11)
-
 static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t max) {
     if (!axes->dxdy.dx && !axes->dxdy.dy) return dxdy_0;
 
@@ -491,16 +519,110 @@ static dxdy_t x11_step(const x11_t *what, axes_t *axes, uint8_t delta, uint8_t m
 
 #elif MK_KIND(MK_TYPE_KINETIC)
 
-static bool kinetic_step(const x11_t* what, axes_t* axes) {
-    if (!axes->dxdy.dx && !axes->dxdy.dy) return false;
+#    ifdef __AVR__
+/* Ever-so-slightly smaller, faster, and better register allocation. */
+typedef __int24  int24_t;
+typedef __uint24 uint24_t;
+#    else
+typedef int32_t  int24_t;
+typedef uint32_t uint24_t;
+#    endif
 
+dxdy_t kinetic_step(const kinetic_t *what, axes_t *axes) {
     uint16_t now = timer_read();
-    uint16_t dur = axes->repeat ? what->interval : (uint16_t)what->delay * 10;
-    if (TIMER_DIFF_16(now, axes->last_time) < dur) return false;
+    uint16_t t_d = TIMER_DIFF_16(now, axes->last_time);
+    if (t_d == 0) return dxdy_0;
     axes->last_time = now;
 
-    if (axes->repeat < UINT8_MAX) axes->repeat++;
-    return true;
+    /* Potential overflow if `dt` > 15ms: we only allow for 4 bits.
+     * We expect `dt` to usually be 1–3ms, very rarely longer. */
+    uint8_t dt = t_d > 15 ? 15 : (uint8_t)t_d;
+
+    uint16_t maxs = (uint16_t)NORM_POSI(MK_KINETIC_EXPS, (uint24_t)what->maxs << exps);
+    if (maxs > UINT8_MAX) maxs = UINT8_MAX;
+    int16_t maxs_dt = (int16_t)(maxs * dt); /* 12 bits */
+
+    uint8_t accn = cardinal(axes->dxdy, what->accn);
+
+    int8_t kinetic(int8_t dir, int16_t * pv, int8_t * rem) {
+        int16_t v = *pv;
+
+        /* 9 bits; ensure acceleration ≥ friction */
+        uint16_t a_fric = (uint16_t)((uint16_t)accn + what->fric);
+        /* ±15 bits; dir: 1 bit, dt: 4 bits, a_fric: 9+2=11 bits */
+        int16_t a_dt = (int16_t)(dir * (int16_t)(a_fric << 2) * dt);
+        /* v(t) + a(t) × dt: ±15 bits; v: ±15 bits, a_dt: ±15 bits */
+        int16_t v_a = ssadd16(v, a_dt);
+
+        /* 16 bits post-normⁿ; v_a²: 30 bits */
+        uint16_t v2 = (uint16_t)NORM_POSI(14, (int32_t)v_a * v_a);
+        /* 15 bits post-normⁿ; what→drag: 8 bits, v2: 16 bits */
+        uint16_t drag_v2 = (uint16_t)NORM_POSI(9, what->drag * (uint24_t)v2);
+        /* 16 bits; drag_v2: 15 bits, what→fric: 8+6=14 bits */
+        uint16_t loss = (uint16_t)(drag_v2 + ((uint16_t)what->fric << 6));
+
+        /* 16 bits post-normⁿ; dt: 4 bits, loss: 16 bits */
+        uint16_t loss_dt = (uint16_t)NORM_POSI(4, (uint24_t)loss * dt);
+
+        /*
+         * Approximating ODEs with recurrence relations—particularly for
+         * our fairly large values of `dt`—can lead to unphysical results.
+         * It is not possible for drag & friction _losses_ to cause a rigid
+         * body in the real world to reverse direction, but for sufficiently
+         * large `dt`, `drag`, and `fric`, our numbers could.
+         *
+         * Fudge this by limiting `loss_dt`. :)
+         */
+
+        /* *pv ≡ v(t+dt): ±15 bits; velocity after all losses */
+        *pv = loss_dt > (uint16_t)abs(v_a) ? 0 : (int16_t)(v_a - signum(v_a) * (int16_t)loss_dt);
+
+        /* v_avg ≡ ½(v(t) + v(t+dt)); carefulling because v + *pv might overflow. */
+        int16_t v_avg = (int16_t)(v + ((*pv - v) >> 1));
+
+        /* displacement: ±15 bits post-normⁿ; maxs_dt: 12 bits, v_avg: ±15 bits */
+        int16_t ds = (int16_t)(*rem + (int16_t)NORM_ZERO(12, (int32_t)maxs_dt * v_avg));
+
+        /* Treat as ±7.8 fixed point: return ±7 now, save .8 for later */
+        int8_t d = (int8_t)NORM_NEAR(8, ds);
+        /* Reading the .8 as a ±7 gives the desired remainder. Coincidence?
+         * No, only because we rounded to nearest. Convenient however. :) */
+        *rem = (int8_t)ds; /* ≡ ds & 0xff */
+
+#    ifdef DEBUG_MOUSE
+        if (debug_config.enable && (v || dir)) {
+            xprintf(/* clang-format off */
+                "dt: %u, v: %04X"
+                ", a_dt: %04X"
+                ", drag_v2: %04X"
+/*                ", loss: %04X"*/
+                ", loss_dt: %04X"
+/*                ", *pv: %04X"*/
+/*                ", maxs_dt: %04X"*/
+/*                ", ds: %04X"*/
+                ", d: %02X, rem: %02X"
+                "\n"
+
+                , dt, v
+                , a_dt
+                , drag_v2
+/*                , loss*/
+                , loss_dt
+/*                , *pv*/
+/*                , maxs_dt*/
+/*                , ds*/
+                , 0xff & d, 0xff & *rem
+                ); /* clang-format on */
+        }
+#    endif
+
+        return d;
+    }
+
+    return (dxdy_t) /* clang-format off */
+        { .dx = kinetic(axes->dxdy.dx, &axes->v_x, &axes->rem.dx)
+        , .dy = kinetic(axes->dxdy.dy, &axes->v_y, &axes->rem.dy)
+        }; /* clang-format on */
 }
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
@@ -518,7 +640,7 @@ static void adjust_speed(void) {
     wheel_axes.dxdy = bishop(wheel_axes.dxdy, wheel.offset[speed]);
 }
 
-#endif /* MK_KIND(MK_TYPE_X11 || MK_TYPE_KINETIC || MK_TYPE_3_SPEED) */
+#endif /* MK_TYPE_X11, MK_TYPE_KINETIC, MK_TYPE_3_SPEED */
 
 /**********************************************************************/
 
@@ -526,10 +648,6 @@ static void adjust_speed(void) {
 #define WD wheel_axes.dxdy
 
 void mousekey_on(uint8_t code) {
-#if MK_KIND(MK_TYPE_KINETIC)
-    if (mouse_timer == 0) mouse_timer = timer_read();
-#endif
-
     bool m_off = !MD.dx && !MD.dy;
     bool w_off = !WD.dx && !WD.dy;
 
@@ -550,13 +668,25 @@ void mousekey_on(uint8_t code) {
             btn_state |= MASK_BTN(code);
             break;
 
-        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-            accel_state |= MASK_ACCEL(code);
-#elif MK_KIND(MK_TYPE_3_SPEED)
-            speed = (uint8_t)(speed_0 + code - KC_MS_ACCEL0);
-#endif
+#if MK_KIND(MK_TYPE_KINETIC)
+        case KC_MS_ACCEL0:
+            exps = MK_KINETIC_EXPS - 1; /* ½ maxs */
             break;
+        case KC_MS_ACCEL1:
+            if (exps > 1) exps--;
+            break;
+        case KC_MS_ACCEL2:
+            if (exps < 15) exps++;
+            break;
+#else /* MK_TYPE_KINETIC */
+        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
+#    if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+            accel_state |= MASK_ACCEL(code);
+#    elif MK_KIND(MK_TYPE_3_SPEED)
+            speed = (uint8_t)(speed_0 + code - KC_MS_ACCEL0);
+#    endif
+            break;
+#endif /* MK_TYPE_KINETIC */
     }
 
     if (m_off && (MD.dx || MD.dy)) mouse_axes.last_time = timer_read();
@@ -585,25 +715,24 @@ void mousekey_off(uint8_t code) {
             btn_state &= (uint8_t)~MASK_BTN(code);
             break;
 
-        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-            accel_state &= (uint8_t)~MASK_ACCEL(code);
-#elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
-            speed = speed_unmod;
-#endif
+#if MK_KIND(MK_TYPE_KINETIC)
+        case KC_MS_ACCEL0:
+            exps = MK_KINETIC_EXPS;
             break;
+#else /* MK_TYPE_KINETIC */
+        case KC_MS_ACCEL0 ... KC_MS_ACCEL2:
+#    if MK_KIND(MK_TYPE_X11)
+            accel_state &= (uint8_t)~MASK_ACCEL(code);
+#    elif MK_TYPE(MK_TYPE_3_SPEED_MOMENTARY)
+            speed = speed_unmod;
+#    endif
+            break;
+#endif /* MK_TYPE_KINETIC */
     }
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-    if (MD.dx == 0 && MD.dy == 0) {
-        mouse_axes.repeat = 0;
-#    if MK_KIND(MK_TYPE_KINETIC)
-        mouse_timer = 0;
-#    endif
-    }
-    if (WD.dx == 0 && WD.dy == 0) {
-        wheel_axes.repeat = 0;
-    }
+#if MK_KIND(MK_TYPE_X11)
+    if (MD.dx == 0 && MD.dy == 0) mouse_axes.repeat = 0;
+    if (WD.dx == 0 && WD.dy == 0) wheel_axes.repeat = 0;
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
     adjust_speed(); /* also (un)apply the bishop() adjustment */
@@ -633,9 +762,15 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
             ", mouse: %3d %3d"
             ", wheel: %3d %3d"
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_X11)
             ", repeat m:%2u w:%2u"
             ", accel: %03b"
+#elif MK_KIND(MK_TYPE_KINETIC)
+            ", rem m: %02X %02X"
+                " w: %02X %02X"
+            ", vel m: %04X %04X"
+                " w: %04X %04X"
+            ", exps: %u"
 #elif MK_KIND(MK_TYPE_3_SPEED)
             ", speed: %S"
 #endif
@@ -645,9 +780,15 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
             , m.dx, m.dy
             , w.dx, w.dy
 
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_X11)
             , mouse_axes.repeat, wheel_axes.repeat
             , accel_state
+#elif MK_KIND(MK_TYPE_KINETIC)
+            , mouse_axes.dxdy.dx, mouse_axes.dxdy.dy
+            , wheel_axes.dxdy.dx, wheel_axes.dxdy.dy
+            , mouse_axes.v_x, mouse_axes.v_y
+            , wheel_axes.v_x, wheel_axes.v_y
+            , exps
 #elif MK_KIND(MK_TYPE_3_SPEED)
             , speed_enum[speed]
 #endif
@@ -678,9 +819,11 @@ void mousekey_send(void) { send_dxdy(dxdy_0, dxdy_0); }
 void mousekey_clear(void) {
     /* old behaviour was to preserve .last_time */
     btn_state = 0;
-#if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+#if MK_KIND(MK_TYPE_X11)
     accel_state = 0;
+#endif
 
+#if MK_KIND(MK_TYPE_X11)
     mouse_axes.repeat = 0;
     wheel_axes.repeat = 0;
 #endif
@@ -698,11 +841,8 @@ void mousekey_task(void) {
     dxdy_t w = x11_step(&wheel, &wheel_axes, MOUSEKEY_WHEEL_DELTA, MOUSEKEY_WHEEL_MAX);
 
 #elif MK_KIND(MK_TYPE_KINETIC)
-    /* TODO: clean up {move,wheel}_unit() & fold into kinetic_step() */
-    dxdy_t m = kinetic_step(&mouse, &mouse_axes) ? bishop(mouse_axes.dxdy, move_unit()) : dxdy_0;
-    /* XXX previously we just redefined wheel.interval as a float */
-    wheel.interval = (uint8_t)kinetic_wheel_interval;
-    dxdy_t w = kinetic_step(&wheel, &wheel_axes) ? bishop(wheel_axes.dxdy, wheel_unit()) : dxdy_0;
+    dxdy_t m = kinetic_step(&mouse, &mouse_axes);
+    dxdy_t w = kinetic_step(&wheel, &wheel_axes);
 
 #elif MK_KIND(MK_TYPE_3_SPEED)
     dxdy_t m = speed_step(&mouse_axes, (uint16_t)((uint16_t)mouse.interval[speed] << 2));
@@ -737,6 +877,24 @@ static void print_x11_t(uint8_t n, PGM_P name, const x11_t *what) {
         ); /* clang-format on */
 }
 
+#        elif MK_KIND(MK_TYPE_KINETIC)
+static void print_kinetic_t(uint8_t n, PGM_P name, const kinetic_t *what) {
+    xprintf(/* clang-format off */
+        "\t%S\n"
+        "%u: .accn: %u\n"
+        "%u: .drag: %u\n"
+        "%u: .fric: %u\n"
+        "%u: .maxs: %u\n"
+
+        , name
+        , n + 1, what->accn
+        , n + 2, what->drag
+        , n + 3, what->fric
+        , n + 4, what->maxs
+
+        ); /* clang-format on */
+}
+
 #        elif MK_KIND(MK_TYPE_3_SPEED)
 static void print_3_speed(uint8_t n, PGM_P name, const uint8_t what[speed_COUNT]) {
     for (int i = 0; i < speed_COUNT; i++) {
@@ -750,6 +908,10 @@ static void mousekey_param_print(void) {
 #        if MK_KIND(MK_TYPE_X11)
     print_x11_t(0, PSTR("mouse"), &mouse);
     print_x11_t(4, PSTR("wheel"), &wheel);
+
+#        elif MK_KIND(MK_TYPE_KINETIC)
+    print_kinetic_t(0, PSTR("mouse"), &mouse);
+    print_kinetic_t(4, PSTR("wheel"), &wheel);
 
 #        elif MK_KIND(MK_TYPE_3_SPEED)
     print("\tmouse\n");
@@ -819,6 +981,18 @@ bool mousekey_console(uint8_t code) {
             PARAM(6, wheel.interval);
             PARAM(7, wheel.max_speed);
             PARAM(8, wheel.time_to_max);
+
+#    elif MK_KIND(MK_TYPE_KINETIC)
+#           define PARAM(n, v) case n: pp = &(v); break
+
+            PARAM(1, mouse.accn);
+            PARAM(2, mouse.drag);
+            PARAM(3, mouse.fric);
+            PARAM(4, mouse.maxs);
+            PARAM(5, wheel.accn);
+            PARAM(6, wheel.drag);
+            PARAM(7, wheel.fric);
+            PARAM(8, wheel.maxs);
 
 #    elif MK_KIND(MK_TYPE_3_SPEED)
 #           define PARAM(n, v) case n: pp += offsetof(speed_t, v); break
@@ -901,6 +1075,10 @@ bool mousekey_console(uint8_t code) {
             mouse = (x11_t)MK_X11_MOUSE;
             wheel = (x11_t)MK_X11_WHEEL;
 
+#    elif MK_KIND(MK_TYPE_KINETIC)
+            mouse = (kinetic_t)MK_KINETIC_MOUSE;
+            wheel = (kinetic_t)MK_KINETIC_WHEEL;
+
 #    elif MK_KIND(MK_TYPE_3_SPEED)
             mouse = (speed_t)MK_3_SPEED_MOUSE;
             wheel = (speed_t)MK_3_SPEED_WHEEL;
@@ -932,8 +1110,8 @@ bool mousekey_console(uint8_t code) {
 
 #    if !defined(NO_PRINT) && !defined(USER_PRINT)
     if (param) {
-        int i = param - 1;
-#        if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
+        uint8_t i = (uint8_t)(param - 1);
+#        if MK_KIND(MK_TYPE_X11)
         static const char PROGMEM x11_field_delay[]       = "delay";
         static const char PROGMEM x11_field_interval[]    = "interval";
         static const char PROGMEM x11_field_max_speed[]   = "max_speed";
@@ -947,6 +1125,17 @@ bool mousekey_console(uint8_t code) {
             , i & 4 ? PSTR("wheel") : PSTR("mouse")
             , x11_field[i & 3]
             ); /* clang-format on */
+
+#        elif MK_KIND(MK_TYPE_KINETIC)
+        static const char PROGMEM kinetic_field[4][5] = /* clang-format off */
+            {"accn", "drag", "fric", "maxs"};
+        xprintf(/* clang-format off */
+            "M%u:%S.%S> "
+            , param
+            , i & 4 ? PSTR("wheel") : PSTR("mouse")
+            , kinetic_field[i & 3]
+            ); /* clang-format on */
+
 #        elif MK_KIND(MK_TYPE_3_SPEED)
         xprintf(/* clang-format off */
             "M%u:%S.%S[%S]> "
