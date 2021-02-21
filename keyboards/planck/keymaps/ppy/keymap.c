@@ -58,13 +58,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             _______, _______, _______, _______, _______, _______, _______, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, KC_BSLS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______,_______, _______, _______,  _______, _______),
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
-            KC_TILD, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_BSPC,
-            KC_DEL,  KC_F11,  KC_F12,  _______, _______, _______, KC_LEFT, KC_DOWN,  KC_UP,  KC_RGHT, KC_6,    KC_PLUS,
-            _______, _______, _______, _______, _______, _______, _______, _______,  KC_1,   KC_2,    KC_3,    _______,
-            _______, _______, _______, _______, _______, _______, _______, _______,  _______,KC_DOT,  KC_EQL,  KC_MPLY),
+            _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  _______,
+            _______, KC_F11,  KC_F12,  _______, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RESET,   AG_SWAP, RGB_TOG, RGB_MOD, RGB_HUI, RGB_HUD, RGB_SAI, RGB_SAD, RGB_VAI, _______, KC_DEL ,
@@ -75,7 +75,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_VIM] = LAYOUT_planck_grid(
             _______, _______, VIM_W,   VIM_E,   VIM_R,   _______, VIM_Y,   VIM_U,   VIM_I,   VIM_O,   VIM_P,   _______,
             VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,   VIM_L,   _______, _______,
-            VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______,_______,  VIM_COMMA,VIM_PERIOD,_______,_______,
+            VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______, _______,  VIM_COMMA,VIM_PERIOD,_______,_______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,_______),
 
     [_VINSERT] = LAYOUT_planck_grid(
