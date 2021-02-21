@@ -40,7 +40,9 @@ enum planck_keycodes {
 #define RAISE_VIM LT(RAISE, KC_QUOT)
 
 float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
-float song_kvm[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6));
+
+float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5));
+float song_kvm_1[][2] = SONG(S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5));
 
 uint8_t vim_cmd_layer(void) {
     return _VIM;
@@ -91,6 +93,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 static bool custom_mod_tap_consumed;
+
+static int kvm_target = 0;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
@@ -147,7 +151,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
                 tap_code16(KC_SCROLLLOCK);
                 tap_code16(KC_SCROLLLOCK);
-                PLAY_SONG(song_kvm);
+
+                // track the current target device to give audible feedback
+                kvm_target = (kvm_target + 1) % 2;
+
+                if (kvm_target == 1)
+                    PLAY_SONG(song_kvm_1);
+                else
+                    PLAY_SONG(song_kvm_0);
             }
 
             return false;
