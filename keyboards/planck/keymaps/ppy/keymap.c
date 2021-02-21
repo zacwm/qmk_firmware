@@ -34,6 +34,13 @@ enum planck_keycodes {
     KVM_SWT
 };
 
+// TODO:
+// - rewrite vim layer to not rely in custom keycodes (it shouldn't need to). see https://beta.docs.qmk.fm/using-qmk/advanced-keycodes/feature_leader_key which may be useful
+// - remap bottom-right keys to be usable to take screenshots etc.
+// - map media pause key?
+// - figure out what to do with enter
+// - change lighting based on vim layer toggle status
+
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
 #define RAISE_BS LT(RAISE, KC_QUOT)
