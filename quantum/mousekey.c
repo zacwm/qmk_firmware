@@ -616,7 +616,14 @@ void mousekey_off(uint8_t code) {
 /**********************************************************************/
 
 #if MK_KIND(MK_TYPE_3_SPEED) && !defined(NO_PRINT) && !defined(USER_PRINT)
-static const char *speed_enum[speed_COUNT] = {"unmod", "0", "1", "2"};
+
+static const char PROGMEM speed_enum_unmod[] = "unmod";
+static const char PROGMEM speed_enum_0[]     = "0";
+static const char PROGMEM speed_enum_1[]     = "1";
+static const char PROGMEM speed_enum_2[]     = "2";
+
+static PGM_P speed_enum[speed_COUNT] = {speed_enum_unmod, speed_enum_0, speed_enum_1, speed_enum_2};
+
 #endif
 
 static void send_dxdy(dxdy_t m, dxdy_t w) {
@@ -630,7 +637,7 @@ static void send_dxdy(dxdy_t m, dxdy_t w) {
             ", repeat m:%2u w:%2u"
             ", accel: %03b"
 #elif MK_KIND(MK_TYPE_3_SPEED)
-            ", speed: %s"
+            ", speed: %S"
 #endif
             "\n"
 
@@ -713,9 +720,9 @@ void mousekey_task(void) {
 #    if !defined(NO_PRINT) && !defined(USER_PRINT)
 
 #        if MK_KIND(MK_TYPE_X11)
-static void print_x11_t(uint8_t n, const char *name, const x11_t *what) {
+static void print_x11_t(uint8_t n, PGM_P name, const x11_t *what) {
     xprintf(/* clang-format off */
-        "\t%s\n"
+        "\t%S\n"
         "%u: .delay(*10ms): %u\n"
         "%u: .interval(ms): %u\n"
         "%u: .max_speed: %u\n"
@@ -731,9 +738,9 @@ static void print_x11_t(uint8_t n, const char *name, const x11_t *what) {
 }
 
 #        elif MK_KIND(MK_TYPE_3_SPEED)
-static void print_3_speed(uint8_t n, char *name, const uint8_t what[speed_COUNT]) {
+static void print_3_speed(uint8_t n, PGM_P name, const uint8_t what[speed_COUNT]) {
     for (int i = 0; i < speed_COUNT; i++) {
-        xprintf("%u:	.%s[%s]: %u\n", n + i + 1, name, speed_enum[i], what[i]);
+        xprintf("%u:	.%S[%S]: %u\n", n + i + 1, name, speed_enum[i], what[i]);
     }
 }
 
@@ -741,16 +748,16 @@ static void print_3_speed(uint8_t n, char *name, const uint8_t what[speed_COUNT]
 
 static void mousekey_param_print(void) {
 #        if MK_KIND(MK_TYPE_X11)
-    print_x11_t(0, "mouse", &mouse);
-    print_x11_t(4, "wheel", &wheel);
+    print_x11_t(0, PSTR("mouse"), &mouse);
+    print_x11_t(4, PSTR("wheel"), &wheel);
 
 #        elif MK_KIND(MK_TYPE_3_SPEED)
     print("\tmouse\n");
-    print_3_speed(0, "interval(*4ms)", mouse.interval);
-    print_3_speed(4, "offset", mouse.offset);
+    print_3_speed(0, PSTR("interval(*4ms)"), mouse.interval);
+    print_3_speed(4, PSTR("offset"), mouse.offset);
     print("\twheel\n");
-    print_3_speed(0, "interval(*4ms)", wheel.interval);
-    print_3_speed(4, "offset", wheel.offset);
+    print_3_speed(0, PSTR("interval(*4ms)"), wheel.interval);
+    print_3_speed(4, PSTR("offset"), wheel.offset);
 
 #        else
     print("no knobs sorry\n");
@@ -927,20 +934,25 @@ bool mousekey_console(uint8_t code) {
     if (param) {
         int i = param - 1;
 #        if MK_KIND(MK_TYPE_X11) || MK_KIND(MK_TYPE_KINETIC)
-        static const char *x11_field[4] = /* clang-format off */
-            {"delay", "interval", "max_speed", "time_to_max"};
+        static const char PROGMEM x11_field_delay[]       = "delay";
+        static const char PROGMEM x11_field_interval[]    = "interval";
+        static const char PROGMEM x11_field_max_speed[]   = "max_speed";
+        static const char PROGMEM x11_field_time_to_max[] = "time_to_max";
+
+        static PGM_P x11_field[4] = /* clang-format off */
+            {x11_field_delay, x11_field_interval, x11_field_max_speed, x11_field_time_to_max};
         xprintf(
-            "M%u:%s.%s> "
+            "M%u:%S.%S> "
             , param
-            , i & 4 ? "wheel" : "mouse"
+            , i & 4 ? PSTR("wheel") : PSTR("mouse")
             , x11_field[i & 3]
             ); /* clang-format on */
 #        elif MK_KIND(MK_TYPE_3_SPEED)
         xprintf(/* clang-format off */
-            "M%u:%s.%s[%s]> "
+            "M%u:%S.%S[%S]> "
             , param
-            , axes ? "mouse" : "wheel"
-            , i & 4 ? "offset" : "interval"
+            , axes ? PSTR("mouse") : PSTR("wheel")
+            , i & 4 ? PSTR("offset") : PSTR("interval")
             , speed_enum[i & 3]
             ); /* clang-format on */
 #        endif
