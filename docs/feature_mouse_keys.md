@@ -1,10 +1,13 @@
 # Mouse keys
 
-Mouse keys is a feature that allows you to emulate a mouse using your keyboard. You can move the pointer at different speeds, press 8 buttons and scroll in 8 directions.
+Mouse keys is a feature that allows you to emulate a mouse using your
+keyboard. You can move the pointer at different speeds, press 8 buttons and
+scroll in 8 directions.
 
 ## Adding mouse keys to your keyboard
 
-To use mouse keys, you must at least enable mouse keys support and map mouse actions to keys on your keyboard.
+To use mouse keys, you must at least enable mouse keys support and map mouse
+actions to keys on your keyboard.
 
 ### Enabling mouse keys
 
@@ -16,7 +19,8 @@ MOUSEKEY_ENABLE = yes
 
 ### Mapping mouse actions
 
-In your keymap you can use the following keycodes to map key presses to mouse actions:
+In your keymap you can use the following keycodes to map key presses to
+mouse actions:
 
 |Key             |Aliases  |Description      |
 |----------------|---------|-----------------|
@@ -44,17 +48,30 @@ In your keymap you can use the following keycodes to map key presses to mouse ac
 
 Mouse keys supports several movement modes:
 
-* **Accelerated `MK_TYPE_X11` (default):** Holding movement keys accelerates the cursor linearly until it reaches its maximum speed. Additionally holding down acceleration keys immediately moves the cursor at quarter, half, or full speed.
-* **Combined `MK_TYPE_X11_COMBINED`:** As above, but acceleration keys select between the minimum, half, or the maximum possible (≥ full) speed.
-* **Kinetic:** Holding movement keys accelerates the cursor with its speed following a quadratic curve until it reaches its maximum speed.
-* **Constant `MK_TYPE_3_SPEED`:** Holding movement keys moves the cursor at a constant speed. Acceleration keys select between different predetermined speeds.
-* **Momentary `MK_TYPE_3_SPEED_MOMENTARY`:** As above, but acceleration keys act only while held down.
+* **Accelerated `MK_TYPE_X11` (default):** Holding movement keys accelerates
+  the cursor linearly until it reaches its maximum speed. Additionally
+  holding down acceleration keys immediately moves the cursor at quarter,
+  half, or full speed.
+* **Combined `MK_TYPE_X11_COMBINED`:** As above, but acceleration keys
+  select between the minimum, half, or the maximum possible (≥ full) speed.
+* **Kinetic:** Holding movement keys accelerates the cursor with its speed
+  following a quadratic curve until it reaches its maximum speed.
+* **Constant `MK_TYPE_3_SPEED`:** Holding movement keys moves the cursor at
+  a constant speed. Acceleration keys select between different predetermined
+  speeds.
+* **Momentary `MK_TYPE_3_SPEED_MOMENTARY`:** As above, but acceleration keys
+  act only while held down.
 
 The same principle applies to the scroll wheel.
 
-Configuration options that are times, intervals or delays are given in milliseconds. Scroll speed is given as multiples of the default scroll step. For example, a scroll speed of 8 means that each scroll action covers 8 times the length of the default scroll step as defined by your operating system or application.
+Configuration options that are times, intervals or delays are given in
+milliseconds. Scroll speed is given as multiples of the default scroll step.
+For example, a scroll speed of 8 means that each scroll action covers
+8 times the length of the default scroll step as defined by your operating
+system or application.
 
-To select all but the default mode, you _must_ define `MK_VARIANT` accordingly in your keymap’s `config.h` file:
+To select all but the default mode, you _must_ define `MK_VARIANT`
+accordingly in your keymap’s `config.h` file:
 
 ```c
 #define MK_VARIANT MK_TYPE_X11
@@ -66,7 +83,9 @@ To select all but the default mode, you _must_ define `MK_VARIANT` accordingly i
 
 ### Accelerated & combined modes: `MK_TYPE_X11` & `MK_TYPE_X11_COMBINED`
 
-This is the default mode when `MK_VARIANT` is not defined. You can adjust the cursor and scrolling acceleration using the following settings in your keymap’s `config.h` file:
+This is the default mode when `MK_VARIANT` is not defined. You can adjust
+the cursor and scrolling acceleration using the following settings in your
+keymap’s `config.h` file:
 
 |Define                      |Default|Description                                              |
 |:---------------------------|------:|:--------------------------------------------------------|
@@ -82,28 +101,48 @@ This is the default mode when `MK_VARIANT` is not defined. You can adjust the cu
 
 Tips:
 
-* Setting `MOUSEKEY_DELAY` too low makes the cursor unresponsive. Setting it too high makes small movements difficult.
-* For smoother cursor movements, lower the value of `MOUSEKEY_INTERVAL`. If the refresh rate of your display is 60Hz, you could set it to `16` (1/60). As this raises the cursor speed significantly, you may want to lower `MOUSEKEY_MAX_SPEED`.
-* Setting `MOUSEKEY_TIME_TO_MAX` or `MOUSEKEY_WHEEL_TIME_TO_MAX` to `0` will disable acceleration for the cursor or scrolling respectively. This way you can make one of them constant while keeping the other accelerated, which is not possible in constant speed mode.
-* Setting `MOUSEKEY_WHEEL_INTERVAL` too low will make scrolling too fast. Setting it too high will make scrolling too slow when the wheel key is held down.
+* Setting `MOUSEKEY_DELAY` too low makes the cursor unresponsive. Setting it
+  too high makes small movements difficult.
+* For smoother cursor movements, lower the value of `MOUSEKEY_INTERVAL`. If
+  the refresh rate of your display is 60Hz, you could set it to `16` (1/60).
+  As this raises the cursor speed significantly, you may want to lower
+  `MOUSEKEY_MAX_SPEED`.
+* Setting `MOUSEKEY_TIME_TO_MAX` or `MOUSEKEY_WHEEL_TIME_TO_MAX` to `0` will
+  disable acceleration for the cursor or scrolling respectively. This way
+  you can make one of them constant while keeping the other accelerated,
+  which is not possible in constant speed mode.
+* Setting `MOUSEKEY_WHEEL_INTERVAL` too low will make scrolling too fast.
+  Setting it too high will make scrolling too slow when the wheel key is
+  held down.
 
-Cursor acceleration uses the same algorithm as the X11 Window System MouseKeysAccel feature, although the ‘`curve`’ parameter has not been implemented yet. You can read more about it [on Wikipedia](https://en.wikipedia.org/wiki/Mouse_keys).
+Cursor acceleration uses the same algorithm as the X11 Window System
+MouseKeysAccel feature, although the ‘`curve`’ parameter has not been
+implemented yet. You can read more about it [on
+Wikipedia](https://en.wikipedia.org/wiki/Mouse_keys).
 
 #### Combined mode `MK_TYPE_X11_COMBINED`
 
-This mode functions like **Accelerated** mode, however, you can hold `KC_ACL0`, `KC_ACL1` and `KC_ACL2`
-to momentarily (while held) set the cursor and scroll speeds to constant speeds. When no acceleration
-keys are held, this mode is identical to **Accelerated** mode, and can be modified using all of the
-relevant settings.
+This mode functions like **Accelerated** mode, however, you can hold
+`KC_ACL0`, `KC_ACL1` and `KC_ACL2` to momentarily (while held) set the
+cursor and scroll speeds to constant speeds. When no acceleration keys are
+held, this mode is identical to **Accelerated** mode, and can be modified
+using all of the relevant settings.
 
-* **KC_ACL0:** This acceleration sets your cursor to the slowest possible speed. This is useful for very
-small and detailed movements of the cursor.
-* **KC_ACL1:** This acceleration sets your cursor to half the full (user defined) speed.
-* **KC_ACL2:** This acceleration sets your cursor to the maximum possible (127 pixels per `MOUSEKEY_INTERVAL`) speed. This is useful for moving the cursor large distances without much accuracy.
+* **KC_ACL0:** This acceleration sets your cursor to the slowest possible
+  speed. This is useful for very small and detailed movements of the cursor.
+* **KC_ACL1:** This acceleration sets your cursor to half the full (user
+  defined) speed.
+* **KC_ACL2:** This acceleration sets your cursor to the maximum possible
+  (127 pixels per `MOUSEKEY_INTERVAL`) speed. This is useful for moving the
+  cursor large distances without much accuracy.
 
 ### Kinetic Mode `MK_TYPE_KINETIC`
 
-This is an extension of the accelerated mode. The kinetic mode uses a quadratic curve on the cursor speed which allows precise movements at the beginning and allows to cover large distances by increasing cursor speed quickly thereafter.  You can adjust the cursor and scrolling acceleration using the following settings in your keymap’s `config.h` file:
+This is an extension of the accelerated mode. The kinetic mode uses
+a quadratic curve on the cursor speed which allows precise movements at the
+beginning and allows to cover large distances by increasing cursor speed
+quickly thereafter.  You can adjust the cursor and scrolling acceleration
+using the following settings in your keymap’s `config.h` file:
 
 |Define                                |Default|Description                                              |
 |:-------------------------------------|------:|:--------------------------------------------------------|
@@ -121,19 +160,35 @@ This is an extension of the accelerated mode. The kinetic mode uses a quadratic 
 
 Tips:
 
-* The smoothness of the cursor movement depends on the `MOUSEKEY_INTERVAL` setting. The shorter the interval is set the smoother the movement will be.  Setting the value too low makes the cursor unresponsive.  Lower settings are possible if the micro processor is fast enough. For example: At an interval of `8` milliseconds, `125` movements per second will be initiated.  With a base speed of `1000` each movement will move the cursor by `8` pixels.
-* Mouse wheel movements are implemented differently from cursor movements. While it's okay for the cursor to move multiple pixels at once for the mouse wheel this would lead to jerky movements. Instead, the mouse wheel operates at step size `1`. Setting mouse wheel speed is done by adjusting the number of wheel movements per second.
+* The smoothness of the cursor movement depends on the `MOUSEKEY_INTERVAL`
+  setting. The shorter the interval is set the smoother the movement will
+  be.  Setting the value too low makes the cursor unresponsive.  Lower
+  settings are possible if the micro processor is fast enough. For example:
+  At an interval of `8` milliseconds, `125` movements per second will be
+  initiated.  With a base speed of `1000` each movement will move the cursor
+  by `8` pixels.
+* Mouse wheel movements are implemented differently from cursor movements.
+  While it's okay for the cursor to move multiple pixels at once for the
+  mouse wheel this would lead to jerky movements. Instead, the mouse wheel
+  operates at step size `1`. Setting mouse wheel speed is done by adjusting
+  the number of wheel movements per second.
 
 ### Constant & momentary modes
 
-In this mode you can define multiple different speeds for both the cursor and the mouse wheel. There is no acceleration. `KC_ACL0`, `KC_ACL1` and `KC_ACL2` change the cursor and scroll speed to their respective setting.
+In this mode you can define multiple different speeds for both the cursor
+and the mouse wheel. There is no acceleration. `KC_ACL0`, `KC_ACL1` and
+`KC_ACL2` change the cursor and scroll speed to their respective setting.
 
 You can choose whether speed selection is momentary or tap-to-select:
 
-* **Momentary `MK_TYPE_3_SPEED_MOMENTARY`:** The chosen speed is only active while you hold the respective key. When the key is raised, mouse keys returns to the unmodified speed.
-  Default speeds: `KC_ACL0` < `KC_ACL1` < *unmodified* < `KC_ACL2`
-* **Tap-to-select `MK_TYPE_3_SPEED`:** The chosen speed is activated when you press the respective key and remains active even after the key has been raised. The default speed is that of `KC_ACL1`. There is no unmodified speed.
-  Default speeds: `KC_ACL0` < `KC_ACL1` < `KC_ACL2`
+* **Momentary `MK_TYPE_3_SPEED_MOMENTARY`:** The chosen speed is only active
+  while you hold the respective key. When the key is raised, mouse keys
+  returns to the unmodified speed. Default speeds: `KC_ACL0` < `KC_ACL1`
+  < *unmodified* < `KC_ACL2`
+* **Tap-to-select `MK_TYPE_3_SPEED`:** The chosen speed is activated when
+  you press the respective key and remains active even after the key has
+  been raised. The default speed is that of `KC_ACL1`. There is no
+  unmodified speed. Default speeds: `KC_ACL0` < `KC_ACL1` < `KC_ACL2`
 
 The following settings are available for adjusting cursor movement or scrolling:
 
@@ -158,4 +213,6 @@ The following settings are available for adjusting cursor movement or scrolling:
 
 ## Use with PS/2 Mouse and Pointing Device
 
-Mouse keys button state is shared with [PS/2 mouse](feature_ps2_mouse.md) and [pointing device](feature_pointing_device.md) so mouse keys button presses can be used for clicks and drags.
+Mouse keys button state is shared with [PS/2 mouse](feature_ps2_mouse.md)
+and [pointing device](feature_pointing_device.md) so mouse keys button
+presses can be used for clicks and drags.
