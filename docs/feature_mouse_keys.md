@@ -54,8 +54,12 @@ Mouse keys supports several movement modes:
   half, or full speed.
 * **Combined `MK_TYPE_X11_COMBINED`:** As above, but acceleration keys
   select between the minimum, half, or the maximum possible (≥ full) speed.
-* **Kinetic:** Holding movement keys accelerates the cursor with its speed
-  following a quadratic curve until it reaches its maximum speed.
+* **Kinetic `MK_TYPE_KINETIC`:** Holding movement keys applies a constant
+  accelerating force, but the cursor also experiences drag and friction.
+  That is, initially the speed will increase linearly—and hence movements
+  quadratically—until the effects of drag (proportional to speed²) take
+  over. Releasing movement keys allows drag & friction to slow the cursor
+  down to a standstill after some time.
 * **Constant `MK_TYPE_3_SPEED`:** Holding movement keys moves the cursor at
   a constant speed. Acceleration keys select between different predetermined
   speeds.
@@ -138,40 +142,64 @@ using all of the relevant settings.
 
 ### Kinetic Mode `MK_TYPE_KINETIC`
 
-This is an extension of the accelerated mode. The kinetic mode uses
-a quadratic curve on the cursor speed which allows precise movements at the
-beginning and allows to cover large distances by increasing cursor speed
-quickly thereafter.  You can adjust the cursor and scrolling acceleration
-using the following settings in your keymap’s `config.h` file:
+This mode models mouse cursor and wheel movements with a [numerically
+approximated][euler] [physical simulation][ode], accounting for [drag][drag]
+and [kinetic friction][fric].
 
-|Define                                |Default|Description                                              |
-|:-------------------------------------|------:|:--------------------------------------------------------|
-|`MOUSEKEY_DELAY`                      |      8|Delay between pressing a movement key and cursor movement|
-|`MOUSEKEY_INTERVAL`                   |      8|Time between cursor movements in milliseconds            |
-|`MOUSEKEY_MOVE_DELTA`                 |     25|Step size for accelerating from initial to base speed    |
-|`MOUSEKEY_INITIAL_SPEED`              |    100|Initial speed of the cursor in pixel per second          |
-|`MOUSEKEY_BASE_SPEED`                 |   1000|Maximum cursor speed at which acceleration stops         |
-|`MOUSEKEY_DECELERATED_SPEED`          |    400|Decelerated cursor speed                                 |
-|`MOUSEKEY_ACCELERATED_SPEED`          |   3000|Accelerated cursor speed                                 |
-|`MOUSEKEY_WHEEL_INITIAL_MOVEMENTS`    |     16|Initial number of movements of the mouse wheel           |
-|`MOUSEKEY_WHEEL_BASE_MOVEMENTS`       |     32|Maximum number of movements at which acceleration stops  |
-|`MOUSEKEY_WHEEL_ACCELERATED_MOVEMENTS`|     48|Accelerated wheel movements                              |
-|`MOUSEKEY_WHEEL_DECELERATED_MOVEMENTS`|      8|Decelerated wheel movements                              |
+Host updates are sent as often as possible, limited only by
+[`USB_POLLING_INTERVAL_MS`](config_options.md).
 
-Tips:
+> The kinetic mode uses a quadratic curve on the cursor speed which allows
+> precise movements at the beginning and allows to cover large distances by
+> increasing cursor speed quickly thereafter.
 
-* The smoothness of the cursor movement depends on the `MOUSEKEY_INTERVAL`
-  setting. The shorter the interval is set the smoother the movement will
-  be.  Setting the value too low makes the cursor unresponsive.  Lower
-  settings are possible if the micro processor is fast enough. For example:
-  At an interval of `8` milliseconds, `125` movements per second will be
-  initiated.  With a base speed of `1000` each movement will move the cursor
-  by `8` pixels.
-* Mouse wheel movements are implemented differently from cursor movements.
-  While it's okay for the cursor to move multiple pixels at once for the
-  mouse wheel this would lead to jerky movements. Instead, the mouse wheel
-  operates at step size `1`. Setting mouse wheel speed is done by adjusting
-  the number of wheel movements per second.
+You can adjust the mouse cursor and wheel parameters with the following
+settings in your keymap’s `config.h` file:
+
+|Define                 |Default|Description                          |
+|:----------------------|------:|:------------------------------------|
+|`MK_KINETIC_MOUSE_ACCN`|     24|Acceleration for mouse cursor        |
+|`MK_KINETIC_MOUSE_DRAG`|     16|Drag coefficient for mouse cursor    |
+|`MK_KINETIC_MOUSE_FRIC`|     32|Friction coefficient for mouse cursor|
+|`MK_KINETIC_MOUSE_MAXS`|    128|Maximum speed for mouse cursor       |
+|`MK_KINETIC_WHEEL_ACCN`|     16|Acceleration for mouse wheel         |
+|`MK_KINETIC_WHEEL_DRAG`|      8|Drag coefficient for mouse wheel     |
+|`MK_KINETIC_WHEEL_FRIC`|      8|Friction coefficient for mouse wheel |
+|`MK_KINETIC_WHEEL_MAXS`|     12|Maximum speed for mouse wheel        |
+
+All parameters can be set to their full range of `0`–`255`.
+
+* `ACCN` controls the acceleration while movement keys are held down, and is
+  scaled by √½× for diagonal movements. Setting this to `0` corresponds to
+  an accelerating force that exactly balances out the friction component.
+
+* `FRIC` controls the deceleration due to [Coulombian kinetic friction][fric].
+  Setting this to `255` should bring the cursor to a standstill within FIXME
+  1ms even in the absence of drag.
+
+* `DRAG` controls [an additional contribution][drag] to deceleration when
+  moving at high speeds, but becomes negligible at slow speeds.
+  FIXME ∝v²
+
+* `MAXS` sets the number of pixels moved in 15ms, when the internal model has 
+  has reached its
+  at its maximum velocity.
+
+The `MAXS` parameter can be tweaked during use:
+
+* **KC_ACL0:** Scales `MAXS` to ½× of normal while held down, which can help
+  with more accurate cursor placement. Resets back to 1× when released.
+* **KC_ACL1:** Each tap progressively halves (rounding up) `MAXS`—down to
+  `1`—giving even finer movements.
+* **KC_ACL2:** Each tap progressively doubles `MAXS`, up to `255`.
+
+ProTip: after scaling `MAXS` with `KC_ACL1` or `KC_ACL2`, you can tap
+`KC_ACL0` to reset it back to 1×.
+
+[euler]: https://en.wikipedia.org/wiki/Euler_method
+[ode]: https://en.wikipedia.org/wiki/Ordinary_differential_equation
+[drag]: https://en.wikipedia.org/wiki/Drag_equation
+[fric]: https://en.wikipedia.org/wiki/Coulomb_damping
 
 ### Constant & momentary modes
 
