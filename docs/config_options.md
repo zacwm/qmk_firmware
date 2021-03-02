@@ -102,7 +102,8 @@ This is a C header file that is one of the first things included, and will persi
 * `#define USB_MAX_POWER_CONSUMPTION 500`
   * sets the maximum power (in mA) over USB for the device (default: 500)
 * `#define USB_POLLING_INTERVAL_MS 10`
-  * sets the USB polling rate in milliseconds for the keyboard, mouse, and shared (NKRO/media keys) interfaces
+  * sets the USB polling interval in milliseconds for the keyboard, mouse, and shared (NKRO/media keys) interfaces; usually okay to set this to 1ms, unless connecting to a USB Low Speed 1.5Mbit/s port.
+  https://discord.com/channels/440868230475677696/440868230475677698/816136396250153020
 * `#define USB_SUSPEND_WAKEUP_DELAY 200`
   * set the number of milliseconde to pause after sending a wakeup packet
 * `#define F_SCL 100000L`
