@@ -200,6 +200,7 @@ ProTip: after scaling `MAXS` with `KC_ACL1` or `KC_ACL2`, you can tap
 [ode]: https://en.wikipedia.org/wiki/Ordinary_differential_equation
 [drag]: https://en.wikipedia.org/wiki/Drag_equation
 [fric]: https://en.wikipedia.org/wiki/Coulomb_damping
+[fric]: https://en.wikipedia.org/wiki/Friction#Kinetic_friction
 
 ### Constant & momentary modes
 
