@@ -46,6 +46,7 @@ enum xtonhasvim_keycodes {
   VIM_W,
   VIM_X,
   VIM_Y,
+  VIM_YI,
   VIM_PERIOD, // to support indent/outdent
   VIM_COMMA,  // and toggle comments
   VIM_SHIFT, // avoid side-effect of supporting real shift.
