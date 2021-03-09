@@ -67,14 +67,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_GRV,  _______, _______, _______, _______, KC_LPRN, KC_RPRN, KC_7,    KC_8,    KC_9,    KC_EQL,  _______,
             _______, _______, _______, _______, _______, KC_LBRC, KC_RBRC, KC_4,    KC_5,    KC_6,    KC_MINS, KC_ENT,
             _______, _______, _______, _______, _______, KC_LCBR, KC_RCBR, KC_1,    KC_2,    KC_3,    KC_BSLS, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_0,    KC_DOT,  _______, CAP_MOV, CAP_MOV),
+            _______, _______, _______, _______, _______, _______, _______, KC_0,    KC_DOT,  _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
             _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, _______, _______, _______, KC_WH_U, KC_DEL,
             _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_WH_D, KC_ENT,
             _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
-
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, CAP_MOV, CAP_MOV),
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RESET,   AG_SWAP, RGB_TOG, RGB_MOD, RGB_HUI, RGB_HUD, RGB_SAI, RGB_SAD, RGB_VAI, _______, _______,
             _______, _______, _______, AU_ON,   AU_OFF,  AG_NORM, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
