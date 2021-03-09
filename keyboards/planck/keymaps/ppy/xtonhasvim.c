@@ -594,30 +594,51 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
            * yoink!
            *****************************/
           switch(keycode) {
-          case VIM_B:
-          case VIM_E:
-          case VIM_H:
-          case VIM_J:
-          case VIM_K:
-          case VIM_L:
-          case VIM_W:
-            simple_movement(keycode);
-            tap_code16(LGUI(KC_C));
-            tap_code(KC_RIGHT);
-            yank_was_lines = false;
-            break;
-          case VIM_Y:
-            tap_code16(LGUI(KC_LEFT));
-            tap_code16(LSFT(KC_DOWN));
-            tap_code16(LGUI(KC_C));
-            tap_code(KC_RIGHT);
-            yank_was_lines = true;
-            break;
-          default:
-            // NOTHING
-            break;
+              case VIM_I:
+                  vstate = VIM_YI;
+                  break;
+              case VIM_B:
+              case VIM_E:
+              case VIM_H:
+              case VIM_J:
+              case VIM_K:
+              case VIM_L:
+              case VIM_W:
+                  simple_movement(keycode);
+                  tap_code16(LGUI(KC_C));
+                  tap_code(KC_RIGHT);
+                  yank_was_lines = false;
+                  vstate = VIM_START;
+                  break;
+              case VIM_Y:
+                  tap_code16(LGUI(KC_LEFT));
+                  tap_code16(LSFT(KC_DOWN));
+                  tap_code16(LGUI(KC_C));
+                  tap_code(KC_RIGHT);
+                  yank_was_lines = true;
+                  vstate = VIM_START;
+                  break;
+              default:
+                  // NOTHING
+                  vstate = VIM_START;
+                  break;
           }
-          vstate = VIM_START;
+          break;
+        case VIM_YI:
+          switch(keycode) {
+              case VIM_W:
+                  tap_code16(LALT(KC_LEFT));
+                  register_code(KC_LSHIFT);
+                  tap_code16(LALT(KC_RIGHT));
+                  unregister_code(KC_LSHIFT);
+                  tap_code16(LGUI(KC_C));
+                  tap_code16(LALT(KC_LEFT));
+                  vstate = VIM_START;
+              default:
+                  // ignore
+                  vstate = VIM_Y;
+                  break;
+          }
           break;
         }
     } else {
