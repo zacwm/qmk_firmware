@@ -30,6 +30,7 @@ enum planck_keycodes {
     QWERTY = VIM_SAFE_RANGE,
     BACKLIT,
     CTRL_ESC,
+    KC_BWRD,
     SFT_ENT,
     KVM_SWT
 };
@@ -194,6 +195,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return true;
             break;
+        case KC_BWRD:
+            if (record->event.pressed) {
+                    register_code(KC_LALT);
+                    tap_code16(KC_BSPC);
+                    unregister_code(KC_LALT);
+                    return false;
+            }
         case KC_BSPC:
             if (record->event.pressed) {
                 if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
