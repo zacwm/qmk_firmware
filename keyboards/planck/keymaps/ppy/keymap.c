@@ -22,6 +22,7 @@ enum planck_layers {
     _LOWER,
     _RAISE,
     _ADJUST,
+    _NAV,
     _VIM,
     _VINSERT,
 };
@@ -32,6 +33,7 @@ enum planck_keycodes {
     CTRL_ESC,
     KC_BWRD,
     SFT_ENT,
+    NAV_SCLN,
     KVM_SWT
 };
 
@@ -46,8 +48,6 @@ enum planck_keycodes {
 #define RAISE_BS LT(RAISE, KC_QUOT)
 #define RAISE_VIM LT(RAISE, KC_QUOT)
 
-#define VIM_SCLN LT(_VIM, KC_SCLN)
-
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
 
@@ -61,7 +61,7 @@ uint8_t vim_cmd_layer(void) { return _VIM; }
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT_planck_grid(
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
-            CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    VIM_SCLN, KC_QUOT,
+            CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, SFT_ENT,
             KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_BWRD,  KC_SPC, RAISE,   VIM_START,_______,KC_MPLY, _______),
 
@@ -72,16 +72,28 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
-            KC_GRV,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_LPRN, KC_RPRN, _______, _______, _______, _______, _______,
-            _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_LBRC, VIM_H,   VIM_J,   VIM_K,   VIM_L,   _______, KC_ENT,
-            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_LCBR, KC_RCBR, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
+            KC_GRV,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_LPRN, KC_RPRN, _______, _______, KC_LPRN, KC_RPRN, _______,
+            _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_LBRC, KC_RBRC, _______, _______, KC_LBRC, KC_RBRC, KC_ENT,
+            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_LCBR, KC_RCBR, _______, _______, KC_LCBR, KC_RCBR, _______,
+            _______, _______, _______, _______, _______, KC_SPC,  _______, _______, _______, _______, _______, _______),
+
+    [_NAV] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, KC_PGUP, _______, _______, _______, _______,
+            _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, KC_ENT,  _______, _______, _______, _______),
+
+    [_ADJUST] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VIM] = LAYOUT_planck_grid(
             _______, _______, VIM_W,   VIM_E,   VIM_R,   _______, VIM_Y,   VIM_U,   VIM_I,   VIM_O,   VIM_P,   _______,
             VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,   VIM_L,   _______, KC_ENT,
             VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______, _______, VIM_COMMA,VIM_PERIOD,_______,_______,
-            RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VINSERT] = LAYOUT_planck_grid(
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
@@ -92,10 +104,48 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 static bool custom_mod_tap_consumed;
+static int semicolon_nav_activated;
 
 static int kvm_target = 0;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    switch (keycode) {
+        case NAV_SCLN:
+            if (record->event.pressed) {
+                if (get_mods() & MOD_BIT(KC_LSFT))
+                    return true;
+
+                semicolon_nav_activated = 1;
+                layer_on(_NAV);
+                return false;
+            }
+            else
+            {
+                if (semicolon_nav_activated == 1)
+                    tap_code16(KC_SCLN);
+
+                semicolon_nav_activated = 0;
+                layer_off(_NAV);
+                return false;
+            }
+        case KC_UP:
+        case KC_DOWN:
+        case KC_LEFT:
+        case KC_RGHT:
+            if (semicolon_nav_activated == 1)
+            {
+                semicolon_nav_activated = 2;
+                return true;
+            }
+        default:
+            if (semicolon_nav_activated == 1)
+            {
+                tap_code16(KC_SCLN);
+                semicolon_nav_activated = 2;
+                return true;
+            }
+    }
 
     switch (keycode) {
         case RAISE_ENT:
