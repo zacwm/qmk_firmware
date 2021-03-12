@@ -7,6 +7,6 @@
 #undef NKRO_ENABLE
 
 // todo: fix key fuckery
-#define TAPPING_TERM 10
-#define RETRO_TAPPING
+#define TAPPING_TERM 500
+// #define RETRO_TAPPING
 
