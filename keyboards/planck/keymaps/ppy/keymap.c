@@ -46,7 +46,12 @@ enum planck_keycodes {
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
-#define RAISE_VIM LT(RAISE, KC_QUOT)
+
+#define S_LPRN MT(MOD_LSFT, KC_9)
+#define S_RPRN MT(MOD_LSFT, KC_0)
+
+#define S_LBRC MT(MOD_LSFT, KC_LBRC)
+#define S_RBRC MT(MOD_LSFT, KC_RBRC)
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
@@ -62,19 +67,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT_planck_grid(
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
-            KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, SFT_ENT,
+            KC_LSPO, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSPC,
             KC_MEH,  KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_BWRD, KC_SPC, RAISE_ENT,VIM_START,_______,KC_MPLY, _______),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
-            KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  _______, _______, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, _______, KC_BSLS, KC_ENT,
+            _______, _______, _______, _______, _______, _______, _______, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, _______,
+            S_LBRC,  _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, _______, KC_BSLS, S_RBRC,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
             KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_MINS, KC_EQL,  KC_LCBR, KC_RCBR, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, _______, _______, KC_ENT,
+            _______, _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
             _______, _______, _______, _______, _______, KC_SPC,  _______, _______, _______, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
@@ -104,11 +109,44 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 static bool custom_mod_tap_consumed;
+static int keyword_activated;
 static int semicolon_nav_activated;
 
 static int kvm_target = 0;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    switch (keycode) {
+        case KC_BWRD:
+            if (record->event.pressed) {
+                keyword_activated = 1;
+                return false;
+            }
+            else {
+                if (keyword_activated == 2)
+                {
+                    tap_code16(KC_GRV);
+                }
+                else if (keyword_activated == 1)
+                {
+                    register_code(KC_LALT);
+                    tap_code16(KC_BSPC);
+                    unregister_code(KC_LALT);
+                }
+
+                keyword_activated = 0;
+                return false;
+            }
+
+            break;
+    }
+
+    if (keyword_activated == 1)
+    {
+        tap_code16(KC_GRV);
+        keyword_activated = 2;
+        return true;
+    }
 
     switch (keycode) {
         case NAV_SCLN:
@@ -251,13 +289,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return true;
             break;
-        case KC_BWRD:
-            if (record->event.pressed) {
-                    register_code(KC_LALT);
-                    tap_code16(KC_BSPC);
-                    unregister_code(KC_LALT);
-                    return false;
-            }
         case KC_BSPC:
             if (record->event.pressed) {
                 if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
