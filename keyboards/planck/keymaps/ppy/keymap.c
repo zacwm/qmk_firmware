@@ -72,14 +72,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, _______,
-            S_LBRC,  _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, _______, KC_BSLS, S_RBRC,
+            KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, _______, 
+            S_LBRC,  _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_BSLS, S_RBRC,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
-            KC_TILD, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
+            _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  _______,
+            _______, KC_F11,  KC_F12,  _______, _______, _______, _______, KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, _______, 
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_BSLS, KC_ENT,
             _______, _______, _______, _______, _______, KC_SPC,  _______, _______, _______, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
