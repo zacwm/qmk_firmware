@@ -48,10 +48,10 @@ enum planck_keycodes {
 #define RAISE MO(_RAISE)
 
 #define S_LPRN MT(MOD_LSFT, KC_9)
-#define S_RPRN MT(MOD_LSFT, KC_0)
+#define S_RPRN MT(MOD_RSFT, KC_0)
 
 #define S_LBRC MT(MOD_LSFT, KC_LBRC)
-#define S_RBRC MT(MOD_LSFT, KC_RBRC)
+#define S_RBRC MT(MOD_RSFT, KC_RBRC)
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
