@@ -40,9 +40,6 @@ enum planck_keycodes {
 
 // TODO:
 // - rewrite vim layer to not rely in custom keycodes (it shouldn't need to). see https://beta.docs.qmk.fm/using-qmk/advanced-keycodes/feature_leader_key which may be useful
-// - map media pause key?
-// - figure out what to do with enter
-// - change lighting based on vim layer toggle status
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
@@ -74,7 +71,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            KC_MEH,  RAISE,   KC_LALT, KC_LGUI, KC_LCTL, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,KC_MPLY, _______),
+            KC_MEH,  RAISE,   KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,KC_MPLY, _______),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_TILD, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
@@ -114,7 +111,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 };
 
-static bool custom_mod_tap_consumed;
+static int ctrl_escape_activated;
 static int keyword_activated;
 static int semicolon_nav_activated;
 
@@ -183,8 +180,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case KC_ENT:
         case KC_PGUP:
         case KC_PGDN:
-        case KC_LCTL:
-        case KC_LALT:
+        case WORD_L:
+        case WORD_R:
+        case LINE_L:
+        case LINE_R:
             if (semicolon_nav_activated == 1)
             {
                 semicolon_nav_activated = 2;
@@ -200,50 +199,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     switch (keycode) {
-        case RAISE_ENT:
-            if (record->event.pressed) {
-                layer_on(_RAISE);
-                custom_mod_tap_consumed = false;
-                return true;
-            }
-            else
-            {
-                layer_off(_RAISE);
-                if (!custom_mod_tap_consumed)
-                {
-                    tap_code16(KC_ENT);
-                }
-
-                return false;
-            }
-
-        case SFT_ENT:
-            if (record->event.pressed) {
-                register_code(KC_RSFT);
-                custom_mod_tap_consumed = false;
-                return true;
-            }
-            else
-            {
-                unregister_code(KC_RSFT);
-                if (!custom_mod_tap_consumed)
-                {
-                    tap_code16(KC_ENT);
-                }
-
-                return false;
-            }
-
         case CTRL_ESC:
             if (record->event.pressed) {
                 register_code(KC_LCTL);
-                custom_mod_tap_consumed = false;
-                return true;
+                ctrl_escape_activated = 1;
+                return false;
             }
             else
             {
                 unregister_code(KC_LCTL);
-                if (!custom_mod_tap_consumed)
+                if (ctrl_escape_activated == 1)
                 {
                     if (IS_LAYER_ON(_VINSERT))
                         layer_move(_VIM);
@@ -251,11 +216,27 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         tap_code16(KC_ESC);
                 }
 
+                ctrl_escape_activated = 0;
                 return false;
+            }
+        case KC_J:
+        case KC_K:
+            if (ctrl_escape_activated == 1)
+            {
+                unregister_code(KC_LCTL);
+                tap_code16(KC_ESC);
+                ctrl_escape_activated = 2;
+                return true;
+            }
+        default:
+            if (ctrl_escape_activated == 1)
+            {
+                ctrl_escape_activated = 2;
+                return true;
             }
     }
 
-    custom_mod_tap_consumed |= record->event.pressed;
+    ctrl_escape_activated |= record->event.pressed;
 
     switch (keycode) {
         case KVM_SWT:
