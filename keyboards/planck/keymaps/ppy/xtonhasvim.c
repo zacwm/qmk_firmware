@@ -29,11 +29,9 @@ enum planck_keycodes {
     QWERTY = VIM_SAFE_RANGE,
     BACKLIT,
     CTRL_ESC,
-    KC_BWRD,
-    SFT_ENT,
     NAV_SCLN,
-    RAISE_ENT,
-    KVM_SWT
+    KVM_SWT,
+    COPY,
 };
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
