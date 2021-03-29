@@ -35,11 +35,14 @@ enum planck_keycodes {
     SFT_ENT,
     NAV_SCLN,
     RAISE_ENT,
-    KVM_SWT
+    KVM_SWT,
+    COPY,
+    LOWER_BS,
 };
 
 // TODO:
 // - rewrite vim layer to not rely in custom keycodes (it shouldn't need to). see https://beta.docs.qmk.fm/using-qmk/advanced-keycodes/feature_leader_key which may be useful
+// - fix h->esc
 
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
@@ -56,6 +59,15 @@ enum planck_keycodes {
 #define LINE_L LCTL(KC_LEFT)
 #define LINE_R LCTL(KC_RIGHT)
 
+#define CLOSE_W LGUI(KC_W)
+
+#define GO_BCK LCTL(KC_O)
+#define GO_FWD LCTL(KC_I)
+
+#define CMD_ENT LGUI(KC_ENT)
+
+#define PASTE LGUI(KC_V)
+
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
 
@@ -71,30 +83,30 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            KC_MEH,  RAISE,   KC_LCTL, KC_LALT, KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,KC_MPLY, _______),
+            KC_MEH,  KC_LCTL, KC_LALT, RAISE,   KC_LGUI, LOWER_BS,KC_SPC,  KC_ENT, VIM_START,_______, COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
-            KC_TILD, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
-            KC_GRV,  KC_LPRN, KC_RPRN, KC_EQL,  KC_GT,   KC_SCLN, KC_UNDS, KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, _______,
-            _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_UNDS, _______, _______, KC_BSLS, KC_ENT,  
+            KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
+            KC_TILD, KC_LPRN, KC_RPRN, KC_LT,   KC_EQL,  KC_GT,   KC_UNDS, KC_MINS, KC_LBRC, KC_RBRC, KC_SCLN, KC_GRV,
+            _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, KC_ENT,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_RAISE] = LAYOUT_planck_grid(
-            _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, KC_7,    KC_8,    KC_9,    _______, KC_DEL,
-            _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, _______, KC_4,    KC_5,    KC_6,    _______, _______,
-            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, KC_1,    KC_2,    KC_3,    _______, KC_ENT,
-            _______, _______, _______, _______, _______, _______, _______, KC_0,    _______, _______, _______, _______),
+            _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, _______, _______, _______, _______, KC_DEL,
+            _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, _______, _______, _______, _______, _______, _______,
+            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, _______, _______, _______, _______, KC_ENT,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
-            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, LINE_L,  _______, _______, _______,
+            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, GO_FWD,  GO_BCK,  _______, _______,
             _______, LINE_R,  _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
-            _______, _______, _______, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
+            _______, _______, CLOSE_W, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_DEL,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
             RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VIM] = LAYOUT_planck_grid(
@@ -117,9 +129,37 @@ static int semicolon_nav_activated;
 
 static int kvm_target = 0;
 
+static int lower_consumed = 0;
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
+    if(!process_record_vimlayer(keycode, record)) return false;
+
     switch (keycode) {
+        case COPY:
+            if (record->event.pressed) {
+                SEND_STRING(SS_LGUI("lc"));
+                tap_code16(KC_ESC);
+                tap_code16(KC_ESC);
+            }
+            return false;
+        case LOWER_BS:
+            if (record->event.pressed) {
+                lower_consumed = 0;
+                layer_on(_LOWER);
+                return false;
+            }
+            else {
+                layer_off(_LOWER);
+                if (lower_consumed == 0)
+                {
+                    SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+                }
+
+                return false;
+            }
+
+            break;
         case KC_BWRD:
             if (record->event.pressed) {
                 keyword_activated = 1;
@@ -150,6 +190,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         keyword_activated = 2;
         return true;
     }
+
+    lower_consumed = 1;
 
     switch (keycode) {
         case NAV_SCLN:
@@ -184,6 +226,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case WORD_R:
         case LINE_L:
         case LINE_R:
+        case GO_FWD:
+        case GO_BCK:
+        case CLOSE_W:
             if (semicolon_nav_activated == 1)
             {
                 semicolon_nav_activated = 2;
@@ -194,26 +239,28 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             {
                 tap_code16(KC_SCLN);
                 semicolon_nav_activated = 2;
-                return true;
+                break;
             }
     }
 
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
+                register_code(KC_ESC);
                 register_code(KC_LCTL);
                 ctrl_escape_activated = 1;
                 return false;
             }
             else
             {
+                unregister_code(KC_ESC);
                 unregister_code(KC_LCTL);
                 if (ctrl_escape_activated == 1)
                 {
                     if (IS_LAYER_ON(_VINSERT))
                         layer_move(_VIM);
-                    else
-                        tap_code16(KC_ESC);
+                    /* else */
+                    /*     tap_code16(KC_ESC); */
                 }
 
                 ctrl_escape_activated = 0;
@@ -224,19 +271,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (ctrl_escape_activated == 1)
             {
                 unregister_code(KC_LCTL);
-                tap_code16(KC_ESC);
+                /* tap_code16(KC_ESC); */
                 ctrl_escape_activated = 2;
                 return true;
             }
+            break;
         default:
             if (ctrl_escape_activated == 1)
-            {
                 ctrl_escape_activated = 2;
-                return true;
-            }
+            break;
     }
-
-    ctrl_escape_activated |= record->event.pressed;
 
     switch (keycode) {
         case KVM_SWT:
@@ -319,8 +363,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
             break;
     }
-
-    if(!process_record_vimlayer(keycode, record)) return false;
 
     return true;
 }
