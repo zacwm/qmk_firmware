@@ -16,13 +16,28 @@
 #include "xtonhasvim.h"
 
 enum planck_layers {
-  _QWERTY,
-  _LOWER,
-  _RAISE,
-  _ADJUST,
-  _VIM,
-  _VINSERT
+    _QWERTY,
+    _LOWER,
+    _RAISE,
+    _ADJUST,
+    _NAV,
+    _VIM,
+    _VINSERT,
 };
+
+enum planck_keycodes {
+    QWERTY = VIM_SAFE_RANGE,
+    BACKLIT,
+    CTRL_ESC,
+    KC_BWRD,
+    SFT_ENT,
+    NAV_SCLN,
+    RAISE_ENT,
+    KVM_SWT
+};
+
+#define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
+#define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
 
 uint16_t vstate = VIM_START;
 static bool yank_was_lines = false;
@@ -116,11 +131,32 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
             return false;
         }
 
-        if ((IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT)) && (keycode == KC_MEH || keycode == KC_LALT || keycode == KC_LGUI))
+        if (IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT))
         {
-            layer_clear();
-            PLAY_SONG(song_vim_off);
-            return true;
+            switch (keycode)
+            {
+                case KC_MEH:
+                case KC_LALT:
+                case KC_LGUI:
+                    layer_clear();
+                    PLAY_SONG(song_vim_off);
+                    return true;
+            }
+        }
+    }
+    else
+    {
+        if (IS_LAYER_ON(_VIM) || IS_LAYER_ON(_VINSERT))
+        {
+            switch (keycode)
+            {
+                case CAP_IMG:
+                case CAP_MOV:
+                case KVM_SWT:
+                    layer_clear();
+                    PLAY_SONG(song_vim_off);
+                    return true;
+            }
         }
     }
 
