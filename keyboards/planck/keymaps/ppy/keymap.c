@@ -263,15 +263,16 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_BSPC:
-            if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
+            if (get_mods() & MOD_BIT(KC_LCTL))
             {
-                unregister_code(KC_LCTL);
+                uint8_t mod_state = get_mods();
+                clear_mods();
 
                 register_code(KC_LALT);
                 tap_code16(KC_BSPC);
                 unregister_code(KC_LALT);
 
-                register_code(KC_LCTL);
+                set_mods(mod_state);
                 return false;
             }
             break;
