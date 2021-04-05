@@ -122,10 +122,11 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
     // global toggle logic.
     if (record->event.pressed)
     {
-        if (keycode == VIM_START) {
+        if (keycode == VIM_START || (IS_LAYER_ON(_VINSERT) && keycode == VIM_ESC)) {
             reset_vim_state();
             PLAY_SONG(song_vim_on);
             layer_move(vim_cmd_layer());
+            reset_vim_state();
             return false;
         }
 
