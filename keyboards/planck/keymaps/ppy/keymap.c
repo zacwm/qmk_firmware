@@ -119,6 +119,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
             {
                 unregister_code(KC_ESC);
                 unregister_code(KC_LCTL);
+
                 if (ctrl_escape_activated == 1)
                 {
                     if (IS_LAYER_ON(_VINSERT))
@@ -140,6 +141,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
         default:
             if (ctrl_escape_activated == 1)
             {
+                unregister_code(KC_ESC);
                 register_code(KC_LCTL);
                 ctrl_escape_activated = 2;
             }
