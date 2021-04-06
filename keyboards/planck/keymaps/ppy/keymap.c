@@ -214,17 +214,6 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             tap_code16(KC_ESC);
             return false;
 
-        case CTRL_ESC:
-            if (get_mods() & MOD_BIT(KC_LGUI))
-            {
-                unregister_code(KC_LGUI);
-                SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-                register_code(KC_LGUI);
-                return false;
-            }
-
-            break;
-
         case KVM_SWT:
             if (get_mods() & MOD_BIT(KC_LCTL))
             {
