@@ -18,9 +18,9 @@ enum planck_keycodes {
     NAV_SCLN,
     KVM_SWT,
     COPY,
+    LOWER
 };
 
-#define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
 
 #define WORD_L LALT(KC_LEFT)
@@ -105,7 +105,45 @@ static int ctrl_escape_activated;
 static int semicolon_nav_activated;
 
 // keep track of the current kvm target (to play a different sound on switch).
-static int kvm_target = 0;
+static int kvm_target;
+
+// whether a symbol was typed after lower layer switch
+static int lower_consumed;
+
+bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
+    // handle actual layer toggle.
+    if (keycode == LOWER)
+    {
+        lower_consumed = 0;
+        if (record->event.pressed)
+            layer_on(_LOWER);
+        else
+            layer_off(_LOWER);
+
+        return false;
+    }
+
+    // handle special case keys, where a certain key is pressed immediately following
+    // lower layer. this allows special space/backspace when intention is clear
+    // and we are not attempting to just backspace or punctuate while typing symbols.
+    if (!record->event.pressed || lower_consumed > 0 || !IS_LAYER_ON(_LOWER))
+        return true;
+
+    switch (keycode) {
+        case LOWER:
+            layer_on(_LOWER);
+            return false;
+        case KC_SPC:
+            SEND_STRING(SS_LSFT(SS_TAP(X_SPC)));
+            return false;
+        case KC_BSPC:
+            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+            return false;
+    }
+
+    lower_consumed = 1;
+    return true;
+}
 
 bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
@@ -273,6 +311,8 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_lower_specials(keycode, record)) return false;
+
     if (!process_record_vimlayer(keycode, record)) return false;
 
     if (!process_macros(keycode, record)) return false;
