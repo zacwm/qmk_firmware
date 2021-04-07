@@ -18,7 +18,8 @@ enum planck_keycodes {
     NAV_SCLN,
     KVM_SWT,
     COPY,
-    LOWER
+    LOWER,
+    MEH
 };
 
 #define RAISE MO(_RAISE)
@@ -53,7 +54,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            KC_MEH,  KC_LCTL, KC_LALT, RAISE,   KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, RAISE,   KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
@@ -97,6 +98,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // 1 - pressed (esc activated and held)
 // 2 - consumed (upgraded to ctrl or autoexited on special case keys)
 static int ctrl_escape_activated;
+
+// track the state of CTRL_ESC over multiple key presses.
+// 0 - not activated
+// 1 - activated
+static int meh_activated;
 
 // track the state of NAV_SCLN
 // 0 - not activated
@@ -142,6 +148,40 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     }
 
     lower_consumed = 1;
+    return true;
+}
+
+bool process_meh(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case MEH:
+            if (record->event.pressed) {
+                register_code(KC_LCTL);
+                register_code(KC_LSFT);
+                register_code(KC_LALT);
+                meh_activated = 1;
+                return false;
+            }
+            else
+            {
+                clear_mods();
+                meh_activated = 0;
+                return false;
+            }
+        case KC_L:
+            if (meh_activated == 1)
+            {
+                clear_mods();
+
+                // lock windows
+                SEND_STRING(SS_LGUI(SS_TAP(X_L)));
+                // lock macOS and turn off screen
+                SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
+                meh_activated = 0;
+                return false;
+            }
+            break;
+    }
+
     return true;
 }
 
@@ -321,6 +361,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_ctrl_esc(keycode, record)) return false;
 
+    if (!process_meh(keycode, record)) return false;
     return true;
 }
 
