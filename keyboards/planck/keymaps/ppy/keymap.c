@@ -22,6 +22,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, KC_ENT,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    // this is mainly here just to use layer_state_set_user
+    // raise layer is actually a LGUI key, so any keys here would currently be prefixed with LGUI.
     [_RAISE] = LAYOUT_planck_grid(
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
@@ -41,9 +43,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
-            _______, RGB_HUI, RGB_HUD, _______, _______, _______, _______, _______, _______, _______, _______, KC_DEL,
+            _______, RGB_HUI, RGB_HUD, _______, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, KC_DEL,
             _______, RGB_SAI, RGB_SAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
+            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, _______, _______, _______, _______, 
             RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VIM] = LAYOUT_planck_grid(
@@ -352,6 +354,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
+
     return true;
 }
 
