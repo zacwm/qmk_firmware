@@ -3,6 +3,8 @@ SRC += xtonhasvim.c
 AUDIO_ENABLE = yes
 BACKLIGHT_ENABLE = yes
 KEY_LOCK_ENABLE = yes
+DYNAMIC_MACRO_ENABLE = yes
+DYNAMIC_MACRO_NO_NESTING = true
 
 USER_NAME := ppy
 
