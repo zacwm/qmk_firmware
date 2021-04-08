@@ -14,30 +14,7 @@
  */
 
 #include "xtonhasvim.h"
-
-enum planck_layers {
-    _QWERTY,
-    _LOWER,
-    _RAISE,
-    _ADJUST,
-    _NAV,
-    _VIM,
-    _VINSERT,
-};
-
-enum planck_keycodes {
-    QWERTY = VIM_SAFE_RANGE,
-    BACKLIT,
-    CTRL_ESC,
-    NAV_SCLN,
-    KVM_SWT,
-    COPY,
-    LOWER,
-    MEH
-};
-
-#define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
-#define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
+#include "common.h"
 
 uint16_t vstate = VIM_START;
 static bool yank_was_lines = false;
@@ -52,6 +29,7 @@ static void edit(void) {
     vstate = VIM_START;
     layer_move(_VINSERT);
 }
+
 #define EDIT edit()
 
 static void reset_vim_state(void) {
