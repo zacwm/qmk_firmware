@@ -32,11 +32,6 @@ enum planck_keycodes {
 
 #define CLOSE_W LGUI(KC_W)
 
-#define GO_BCK LCTL(KC_O)
-#define GO_FWD LCTL(KC_I)
-
-#define CMD_ENT LGUI(KC_ENT)
-
 #define PASTE LGUI(KC_V)
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
@@ -69,7 +64,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
-            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, GO_FWD,  GO_BCK,  _______, _______,
+            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, LINE_L,  _______, _______, _______,
             _______, LINE_R,  _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
             _______, _______, CLOSE_W, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
@@ -77,7 +72,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, _______, _______, _______, _______, _______, _______, _______, _______, KC_DEL,
             _______, RGB_SAI, RGB_SAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
+            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, _______, _______, _______, KC_ENT,
             RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VIM] = LAYOUT_planck_grid(
@@ -159,18 +154,22 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 register_code(KC_LSFT);
                 register_code(KC_LALT);
                 meh_activated = 1;
-                return false;
             }
             else
             {
-                clear_mods();
+                unregister_code(KC_LCTL);
+                unregister_code(KC_LSFT);
+                unregister_code(KC_LALT);
                 meh_activated = 0;
-                return false;
             }
-        case KC_L:
+
+            return true;
+        case KC_Q:
             if (meh_activated == 1)
             {
-                clear_mods();
+                unregister_code(KC_LCTL);
+                unregister_code(KC_LSFT);
+                unregister_code(KC_LALT);
 
                 // lock windows
                 SEND_STRING(SS_LGUI(SS_TAP(X_L)));
@@ -263,8 +262,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case WORD_R:
         case LINE_L:
         case LINE_R:
-        case GO_FWD:
-        case GO_BCK:
         case CLOSE_W:
             if (semicolon_nav_activated == 1)
             {
