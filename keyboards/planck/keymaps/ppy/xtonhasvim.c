@@ -32,6 +32,8 @@ enum planck_keycodes {
     NAV_SCLN,
     KVM_SWT,
     COPY,
+    LOWER,
+    MEH
 };
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
@@ -137,6 +139,7 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
                 case KC_MEH:
                 case KC_LALT:
                 case KC_LGUI:
+                case MEH:
                     layer_clear();
                     PLAY_SONG(song_vim_off);
                     return true;
