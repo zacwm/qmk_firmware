@@ -14,12 +14,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, FKEYS,   RAISE,   LOWER,   KC_SPC,  KC_ENT,  VIM_START,_______,COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_TILD, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_GRV,  KC_LPRN, KC_RPRN, KC_LT,   KC_EQL,  KC_GT,   KC_UNDS, KC_MINS, KC_LBRC, KC_RBRC, KC_SCLN, _______,
             _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, KC_ENT,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
+
+    [_RAISE] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_FKEYS] = LAYOUT_planck_grid(
@@ -75,6 +81,26 @@ static int kvm_target;
 
 // whether a symbol was typed after lower layer switch
 static int lower_consumed;
+
+bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == RAISE)
+    {
+        if (record->event.pressed)
+        {
+            layer_on(_RAISE);
+            register_code(KC_LGUI);
+        }
+        else
+        {
+            layer_off(_RAISE);
+            unregister_code(KC_LGUI);
+        }
+
+        return false;
+    }
+
+    return true;
+}
 
 bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     // handle actual layer toggle.
@@ -313,6 +339,8 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_raise_specials(keycode, record)) return false;
+
     if (!process_lower_specials(keycode, record)) return false;
 
     if (!process_record_vimlayer(keycode, record)) return false;
@@ -328,5 +356,5 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    return update_tri_layer_state(state, _LOWER, _FKEYS, _ADJUST);
+    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }
