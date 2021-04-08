@@ -174,7 +174,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
         return false;
     }
 
-    if (!IS_LAYER_ON(_LOWER))
+    if (!IS_LAYER_ON(_LOWER) || lower_consumed > 0)
         return true;
 
     // consumed even on a release of another key to avoid false firings of grave surround.
@@ -183,7 +183,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     // handle special case keys, where a certain key is pressed immediately following
     // lower layer. this allows special space/backspace when intention is clear
     // and we are not attempting to just backspace or punctuate while typing symbols.
-    if (!record->event.pressed || lower_consumed > 0)
+    if (!record->event.pressed)
         return true;
 
     switch (keycode) {
