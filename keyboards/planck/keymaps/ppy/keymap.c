@@ -84,6 +84,12 @@ static int kvm_target;
 // whether a symbol was typed after lower layer switch
 static int lower_consumed;
 
+// track the state of grave surround
+// 0 - not activated
+// 1 - started (cursor placed between ``)
+// 2 - consumed (success or revert)
+static int grave_surround_state;
+
 bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     if (keycode == RAISE)
     {
@@ -104,29 +110,83 @@ bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == LOWER)
+    {
+        if (record->event.pressed)
+        {
+            switch (grave_surround_state)
+            {
+                case 1:
+                    tap_code16(KC_RGHT);
+                    tap_code16(KC_BSPC);
+                    tap_code16(KC_BSPC);
+                    break;
+                case 2:
+                    tap_code16(KC_RGHT);
+                    tap_code16(KC_SPC);
+                    break;
+            }
+        }
+        else
+        {
+            switch (grave_surround_state)
+            {
+                case 0:
+                    if (lower_consumed == 0 && get_mods() == 0)
+                    {
+                        // begin grave surround sequence.
+                        // starts on a release but ends on the next press (see above).
+                        tap_code16(KC_GRV);
+                        tap_code16(KC_GRV);
+                        tap_code16(KC_LEFT);
+                        grave_surround_state = 1;
+                    }
+                    break;
+
+                default:
+                    grave_surround_state = 0;
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    if (grave_surround_state == 1)
+        grave_surround_state++;
+
+    return true;
+}
+
 bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     // handle actual layer toggle.
     if (keycode == LOWER)
     {
-        lower_consumed = 0;
         if (record->event.pressed)
+        {
+            lower_consumed = 0;
             layer_on(_LOWER);
+        }
         else
             layer_off(_LOWER);
 
         return false;
     }
 
+    if (!IS_LAYER_ON(_LOWER))
+        return true;
+
+    // consumed even on a release of another key to avoid false firings of grave surround.
+    lower_consumed = 1;
+
     // handle special case keys, where a certain key is pressed immediately following
     // lower layer. this allows special space/backspace when intention is clear
     // and we are not attempting to just backspace or punctuate while typing symbols.
-    if (!record->event.pressed || lower_consumed > 0 || !IS_LAYER_ON(_LOWER))
+    if (!record->event.pressed || lower_consumed > 0)
         return true;
 
     switch (keycode) {
-        case LOWER:
-            layer_on(_LOWER);
-            return false;
         case KC_SPC:
             SEND_STRING(SS_LSFT(SS_TAP(X_SPC)));
             return false;
@@ -135,7 +195,6 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
             return false;
     }
 
-    lower_consumed = 1;
     return true;
 }
 
@@ -342,6 +401,8 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_raise_specials(keycode, record)) return false;
+
+    if (!process_grave_surround(keycode, record)) return false;
 
     if (!process_lower_specials(keycode, record)) return false;
 
