@@ -19,7 +19,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_LOWER] = LAYOUT_planck_grid(
             KC_TILD, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_GRV,  KC_LPRN, KC_RPRN, KC_LT,   KC_EQL,  KC_GT,   KC_UNDS, KC_MINS, KC_LBRC, KC_RBRC, KC_SCLN, _______,
-            _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, KC_ENT,
+            KC_LCBR, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, KC_RCBR,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     // this is mainly here just to use layer_state_set_user
@@ -45,7 +45,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, _______, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, KC_DEL,
             _______, RGB_SAI, RGB_SAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CLICKY_TOGGLE, CLICKY_DOWN, CLICKY_UP, _______,
+            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
             RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
     [_VIM] = LAYOUT_planck_grid(
