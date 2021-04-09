@@ -398,35 +398,43 @@ float song_shift_0[][2] = SONG(S__NOTE(_F3));
 float song_shift_1[][2] = SONG(S__NOTE(_G4));
 float song_shift_2[][2] = SONG(S__NOTE(_A4));
 
-bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
-    if (!record->event.pressed)
-        return true;
+void exit_shifted_underscoring(void) {
+    if (shift_state == 0)
+        return;
 
+    PLAY_SONG(song_shift_0);
+    shift_state = 0;
+}
+
+bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case KC_LSFT:
         case KC_RSFT:
             if (timer_elapsed(shift_timer) < 250)
             {
-                shift_state++;
-                switch (shift_state)
+                if (record->event.pressed)
                 {
-                    case 1:
-                        PLAY_SONG(song_shift_1);
-                        break;
-                    case 2:
-                        PLAY_SONG(song_shift_2);
-                        break;
+                    shift_state++;
+                    switch (shift_state)
+                    {
+                        case 1:
+                            PLAY_SONG(song_shift_1);
+                            break;
+                        case 2:
+                            PLAY_SONG(song_shift_2);
+                            break;
+                    }
                 }
             }
-            else if (shift_state > 0)
-            {
-                PLAY_SONG(song_shift_0);
-                shift_state = 0;
-            }
+            else 
+                exit_shifted_underscoring();
 
             shift_timer = timer_read();
             break;
         case KC_SPC:
+            if (!record->event.pressed)
+                return true;
+
             switch (shift_state)
             {
                 case 1:
@@ -436,6 +444,13 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
                     tap_code16(KC_MINS);
                     return false;
             }
+            break;
+        case KC_BSPC:
+            break;
+        default:
+            // other keys should immediately cancel
+            if (keycode < KC_A || keycode > KC_0)
+                exit_shifted_underscoring();
             break;
     }
 
