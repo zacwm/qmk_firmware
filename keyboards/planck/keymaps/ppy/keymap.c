@@ -82,6 +82,9 @@ static int semicolon_nav_activated;
 static int kvm_target;
 
 // whether a symbol was typed after lower layer switch
+// 0  - not consumed
+// 1  - consumed by standard case
+// 2+ - consumed by special case
 static int lower_consumed;
 
 // track the state of grave surround
@@ -89,6 +92,8 @@ static int lower_consumed;
 // 1 - started (cursor placed between ``)
 // 2 - consumed (success or revert)
 static int grave_surround_state;
+
+static bool last_was_number;
 
 bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     if (keycode == RAISE)
@@ -191,31 +196,63 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
             layer_on(_LOWER);
         }
         else
+        {
+            if (lower_consumed == 3)
+                unregister_code(KC_LSFT);
             layer_off(_LOWER);
+        }
 
         return false;
     }
 
-    if (!IS_LAYER_ON(_LOWER) || lower_consumed > 0)
+    if (!IS_LAYER_ON(_LOWER))
         return true;
-
-    // consumed even on a release of another key to avoid false firings of grave surround.
-    lower_consumed = 1;
 
     // handle special case keys, where a certain key is pressed immediately following
     // lower layer. this allows special space/backspace when intention is clear
     // and we are not attempting to just backspace or punctuate while typing symbols.
-    if (!record->event.pressed)
-        return true;
+    if (record->event.pressed)
+    {
+        if (lower_consumed != 1)
+        {
+            switch (keycode) {
+                case KC_LCBR:
+                    if (last_was_number)
+                    {
+                        // curly becomes dot when in numeric sequence.
+                        tap_code16(KC_DOT);
+                        lower_consumed = 1;
+                        return false;
+                    }
+                    break;
+                case KC_SPC:
+                    // todo: only register LSFT to allow for key repeat.
+                    register_code(KC_LSFT);
+                    lower_consumed = 3;
+                    return true;
+                case KC_BSPC:
+                    SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+                    lower_consumed = 2;
+                    return false;
+            }
+        }
 
-    switch (keycode) {
-        case KC_SPC:
-            SEND_STRING(SS_LSFT(SS_TAP(X_SPC)));
-            return false;
-        case KC_BSPC:
-            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-            return false;
+        switch (keycode) {
+            case KC_LCBR:
+                if (last_was_number)
+                {
+                    // curly becomes dot when in numeric sequence.
+                    tap_code16(KC_DOT);
+                    lower_consumed = 1;
+                    return false;
+                }
+                break;
+        }
     }
+
+    // only upgrade from initial state. 2 is capturing
+    if (lower_consumed == 0)
+        lower_consumed = 1;
 
     return true;
 }
@@ -421,7 +458,31 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed)
+    {
+        switch (keycode) {
+            case KC_1:
+            case KC_2:
+            case KC_3:
+            case KC_4:
+            case KC_5:
+            case KC_6:
+            case KC_7:
+            case KC_8:
+            case KC_9:
+            case KC_0:
+                last_was_number = true;
+                break;
+            default:
+                last_was_number = false;
+                break;
+        }
+    }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
     if (!process_raise_specials(keycode, record)) return false;
 
     if (!process_grave_surround(keycode, record)) return false;
@@ -437,6 +498,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
+    
+    update_last_was_number(keycode, record);
 
     return true;
 }
