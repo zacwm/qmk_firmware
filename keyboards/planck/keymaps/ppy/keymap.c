@@ -383,6 +383,47 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+static int shift_state;
+
+bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_LSFT:
+            if (!record->event.pressed)
+                shift_state = 0;
+            else
+                shift_state++;
+            break;
+
+        case KC_RSFT:
+            if (!record->event.pressed)
+            {
+                if (shift_state > 0)
+                {
+                    // if shift is already held, release it but don't reset shift state.
+                    unregister_code(KC_LSFT);
+                }
+                else
+                    shift_state = 0;
+            }
+            else
+                shift_state++;
+            break;
+        case KC_SPC:
+            if (!record->event.pressed)
+                break;
+
+            if (shift_state > 0)
+            {
+                tap_code16(KC_UNDS);
+                return false;
+            }
+            break;
+    }
+
+
+    return true;
+}
+
 bool process_macros(uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed)
         return true;
@@ -482,6 +523,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_lower_specials(keycode, record)) return false;
 
     if (!process_record_vimlayer(keycode, record)) return false;
+
+    if (!process_shifted_underscoring(keycode, record)) return false;
 
     if (!process_macros(keycode, record)) return false;
 
