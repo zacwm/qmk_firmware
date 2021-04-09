@@ -115,6 +115,8 @@ bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+static uint16_t grave_surround_timer;
+
 bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     // exit via arbitrary key
     if (get_mods() == 0 && keycode == KC_SPC)
@@ -146,11 +148,14 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
             switch (grave_surround_state)
             {
                 case 0:
-                    // begin grave surround sequence.
-                    tap_code16(KC_GRV);
-                    tap_code16(KC_GRV);
-                    tap_code16(KC_LEFT);
-                    grave_surround_state = 1;
+                    if (timer_elapsed(grave_surround_timer) < 250)
+                    {
+                        // begin grave surround sequence.
+                        tap_code16(KC_GRV);
+                        tap_code16(KC_GRV);
+                        tap_code16(KC_LEFT);
+                        grave_surround_state = 1;
+                    }
                     break;
                 case 1:
                     // end via cancel
@@ -167,6 +172,8 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
             }
         }
 
+
+        grave_surround_timer = timer_read();
         return true;
     }
 
