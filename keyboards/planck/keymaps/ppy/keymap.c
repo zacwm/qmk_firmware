@@ -426,10 +426,14 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
                     }
                 }
             }
-            else 
+            else
+            {
+                // exiting on timer elapsed on pressed and released allows auto release on caps underscoring.
                 exit_shifted_underscoring();
+            }
 
-            shift_timer = timer_read();
+            if (record->event.pressed)
+                shift_timer = timer_read();
             break;
         case KC_SPC:
             if (!record->event.pressed)
