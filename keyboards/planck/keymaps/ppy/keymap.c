@@ -141,37 +141,27 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     // exit or enter via lower
     if (keycode == LOWER)
     {
-        if (record->event.pressed)
-        {
-            switch (grave_surround_state)
-            {
-                case 1:
-                    tap_code16(KC_RGHT);
-                    tap_code16(KC_BSPC);
-                    tap_code16(KC_BSPC);
-                    break;
-                case 2:
-                    tap_code16(KC_RGHT);
-                    break;
-            }
-        }
-        else
+        if (!record->event.pressed && lower_consumed == 0 && get_mods() == 0)
         {
             switch (grave_surround_state)
             {
                 case 0:
-                    if (lower_consumed == 0 && get_mods() == 0)
-                    {
-                        // begin grave surround sequence.
-                        // starts on a release but ends on the next press (see above).
-                        tap_code16(KC_GRV);
-                        tap_code16(KC_GRV);
-                        tap_code16(KC_LEFT);
-                        grave_surround_state = 1;
-                    }
+                    // begin grave surround sequence.
+                    tap_code16(KC_GRV);
+                    tap_code16(KC_GRV);
+                    tap_code16(KC_LEFT);
+                    grave_surround_state = 1;
                     break;
-
-                default:
+                case 1:
+                    // end via cancel
+                    tap_code16(KC_RGHT);
+                    tap_code16(KC_BSPC);
+                    tap_code16(KC_BSPC);
+                    grave_surround_state = 0;
+                    break;
+                case 2:
+                    // end via commit
+                    tap_code16(KC_RGHT);
                     grave_surround_state = 0;
                     break;
             }
