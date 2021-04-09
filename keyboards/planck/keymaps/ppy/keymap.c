@@ -369,6 +369,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case KC_ENT:
         case KC_PGUP:
         case KC_PGDN:
+        case KC_LSFT:
+        case KC_RSFT:
         case WORD_L:
         case WORD_R:
         case LINE_L:
