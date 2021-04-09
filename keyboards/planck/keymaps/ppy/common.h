@@ -4,6 +4,7 @@ enum planck_layers {
     _QWERTY,
     _LOWER,
     _RAISE,
+    _GAME,
     _FKEYS,
     _ADJUST,
     _NAV,
@@ -20,6 +21,7 @@ enum planck_keycodes {
     COPY,
     LOWER,
     RAISE,
+    GAME,
     MEH
 };
 

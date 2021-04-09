@@ -7,6 +7,9 @@ float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
 float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5));
 float song_kvm_1[][2] = SONG(S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5));
 
+float song_game_0[][2] = SONG(S__NOTE(_G4));
+float song_game_1[][2] = SONG(S__NOTE(_C6),S__NOTE(_C6));
+
 uint8_t vim_cmd_layer(void) { return _VIM; }
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -30,6 +33,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    [_GAME] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
+            KC_ESC,  _______, _______, _______, KC_SPC,  _______, _______, _______, GAME,    _______, CAP_IMG, CAP_MOV),
+
     [_FKEYS] = LAYOUT_planck_grid(
             _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_DEL,
             KC_LCTL, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, _______, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______,
@@ -44,7 +53,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, _______, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, KC_DEL,
-            _______, RGB_SAI, RGB_SAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, _______, _______, _______,
             _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
             RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
 
@@ -81,6 +90,11 @@ static int semicolon_nav_activated;
 // keep track of the current kvm target (to play a different sound on switch).
 static int kvm_target;
 
+// keep track of the kvm target which is in game mode.
+static int game_target = -1;
+
+#define IS_GAME kvm_target == game_target
+
 // whether a symbol was typed after lower layer switch
 // 0  - not consumed
 // 1  - consumed by standard case
@@ -94,6 +108,37 @@ static int lower_consumed;
 static int grave_surround_state;
 
 static bool last_was_number;
+
+void set_game_mode(bool state, bool update_target_state)
+{
+    if (state)
+    {
+        layer_on(_GAME);
+        PLAY_SONG(song_game_1);
+        if (update_target_state)
+            game_target = kvm_target;
+    }
+    else
+    {
+        layer_off(_GAME);
+        if (update_target_state && game_target != -1)
+        {
+            PLAY_SONG(song_game_0);
+            game_target = -1;
+        }
+    }
+}
+
+bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == GAME && record->event.pressed)
+    {
+        set_game_mode(!(IS_GAME), true);
+        return false;
+    }
+
+    return true;
+}
+
 
 bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     if (keycode == RAISE)
@@ -395,8 +440,8 @@ static int shift_state;
 static uint16_t shift_timer;
 
 float song_shift_0[][2] = SONG(S__NOTE(_F3));
-float song_shift_1[][2] = SONG(S__NOTE(_G4));
-float song_shift_2[][2] = SONG(S__NOTE(_A4));
+float song_shift_1[][2] = SONG(S__NOTE(_G3));
+float song_shift_2[][2] = SONG(S__NOTE(_A3));
 
 void exit_shifted_underscoring(void) {
     if (shift_state == 0)
@@ -491,6 +536,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             else
                 PLAY_SONG(song_kvm_0);
 
+            set_game_mode(IS_GAME, false);
             return false;
 
         case KC_W:
@@ -570,6 +616,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
+
+    if (!process_game_specials(keycode, record)) return false;
 
     update_last_was_number(keycode, record);
 
