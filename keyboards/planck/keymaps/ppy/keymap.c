@@ -468,6 +468,9 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
                         case 2:
                             PLAY_SONG(song_shift_2);
                             break;
+                        default:
+                            exit_shifted_underscoring();
+                            break;
                     }
                 }
             }
