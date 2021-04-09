@@ -392,41 +392,52 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
 
 static int shift_state;
 
+static uint16_t shift_timer;
+
+float song_shift_0[][2] = SONG(S__NOTE(_F3));
+float song_shift_1[][2] = SONG(S__NOTE(_G4));
+float song_shift_2[][2] = SONG(S__NOTE(_A4));
+
 bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
+    if (!record->event.pressed)
+        return true;
+
     switch (keycode) {
         case KC_LSFT:
-            if (!record->event.pressed)
-                shift_state = 0;
-            else
-                shift_state++;
-            break;
-
         case KC_RSFT:
-            if (!record->event.pressed)
+            if (timer_elapsed(shift_timer) < 250)
             {
-                if (shift_state > 0)
-                {
-                    // if shift is already held, release it but don't reset shift state.
-                    unregister_code(KC_LSFT);
-                }
-                else
-                    shift_state = 0;
-            }
-            else
                 shift_state++;
+                switch (shift_state)
+                {
+                    case 1:
+                        PLAY_SONG(song_shift_1);
+                        break;
+                    case 2:
+                        PLAY_SONG(song_shift_2);
+                        break;
+                }
+            }
+            else if (shift_state > 0)
+            {
+                PLAY_SONG(song_shift_0);
+                shift_state = 0;
+            }
+
+            shift_timer = timer_read();
             break;
         case KC_SPC:
-            if (!record->event.pressed)
-                break;
-
-            if (shift_state > 0)
+            switch (shift_state)
             {
-                tap_code16(KC_UNDS);
-                return false;
+                case 1:
+                    tap_code16(KC_UNDS);
+                    return false;
+                case 2:
+                    tap_code16(KC_MINS);
+                    return false;
             }
             break;
     }
-
 
     return true;
 }
@@ -540,7 +551,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
-    
+
     update_last_was_number(keycode, record);
 
     return true;
