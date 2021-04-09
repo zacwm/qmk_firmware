@@ -111,6 +111,29 @@ bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
+    // exit via arbitrary key
+    if (get_mods() == 0 && keycode == KC_SPC)
+    {
+        if (record->event.pressed)
+        {
+            switch (grave_surround_state)
+            {
+                case 1:
+                    tap_code16(KC_RGHT);
+                    tap_code16(KC_BSPC);
+                    tap_code16(KC_BSPC);
+                    break;
+                case 2:
+                    tap_code16(KC_RGHT);
+                    break;
+            }
+        }
+
+        grave_surround_state = 0;
+        return true;
+    }
+
+    // exit or enter via lower
     if (keycode == LOWER)
     {
         if (record->event.pressed)
@@ -124,7 +147,6 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                     break;
                 case 2:
                     tap_code16(KC_RGHT);
-                    tap_code16(KC_SPC);
                     break;
             }
         }
