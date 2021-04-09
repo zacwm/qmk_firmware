@@ -67,7 +67,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // 2 - consumed (upgraded to ctrl or autoexited on special case keys)
 static int ctrl_escape_activated;
 
-// track the state of CTRL_ESC over multiple key presses.
+// track the state of MEH over multiple key presses.
 // 0 - not activated
 // 1 - activated
 static int meh_activated;
