@@ -164,7 +164,7 @@ static uint16_t grave_surround_timer;
 
 bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     // exit via arbitrary key
-    if (get_mods() == 0 && keycode == KC_SPC)
+    if (get_mods() == 0 && (keycode == KC_SPC || keycode == KC_ENT))
     {
         if (record->event.pressed)
         {
@@ -175,6 +175,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                     tap_code16(KC_BSPC);
                     tap_code16(KC_BSPC);
                     break;
+
                 case 2:
                     tap_code16(KC_RGHT);
                     break;
