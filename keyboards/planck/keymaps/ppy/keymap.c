@@ -608,23 +608,25 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_raise_specials(keycode, record)) return false;
 
-    if (!process_grave_surround(keycode, record)) return false;
+    if (!process_macros(keycode, record)) return false;
+
+    if (!(IS_GAME) && !process_grave_surround(keycode, record)) return false;
 
     if (!process_lower_specials(keycode, record)) return false;
+
+    if (!process_game_specials(keycode, record)) return false;
+
+    if (!process_nav_scln(keycode, record)) return false;
+
+    if (IS_GAME) return true;
 
     if (!process_record_vimlayer(keycode, record)) return false;
 
     if (!process_shifted_underscoring(keycode, record)) return false;
 
-    if (!process_macros(keycode, record)) return false;
-
-    if (!process_nav_scln(keycode, record)) return false;
-
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
-
-    if (!process_game_specials(keycode, record)) return false;
 
     update_last_was_number(keycode, record);
 
