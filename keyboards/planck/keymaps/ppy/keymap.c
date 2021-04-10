@@ -184,9 +184,10 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                     tap_code16(KC_RGHT);
                     break;
             }
+
+            grave_surround_state = 0;
         }
 
-        grave_surround_state = 0;
         return true;
     }
 
@@ -228,7 +229,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     }
 
     if (grave_surround_state == 1)
-        grave_surround_state++;
+        grave_surround_state = 2;
 
     return true;
 }
