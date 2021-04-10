@@ -147,13 +147,14 @@ bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
         {
             layer_on(_RAISE);
             if (IS_GAME)
-                tap_code(KC_SPC);
+                register_code(KC_SPC);
             else
                 register_code(KC_LGUI);
         }
         else
         {
             layer_off(_RAISE);
+            unregister_code(KC_SPC);
             unregister_code(KC_LGUI);
         }
 
