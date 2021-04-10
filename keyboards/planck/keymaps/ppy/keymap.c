@@ -610,7 +610,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_macros(keycode, record)) return false;
 
-    if (!(IS_GAME) && !process_grave_surround(keycode, record)) return false;
+    if (!(IS_GAME))
+    {
+        // must be processed before grave to allow underscoring inside surround.
+        if (!process_shifted_underscoring(keycode, record)) return false;
+
+        if (!process_grave_surround(keycode, record)) return false;
+    }
 
     if (!process_lower_specials(keycode, record)) return false;
 
@@ -621,8 +627,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (IS_GAME) return true;
 
     if (!process_record_vimlayer(keycode, record)) return false;
-
-    if (!process_shifted_underscoring(keycode, record)) return false;
 
     if (!process_ctrl_esc(keycode, record)) return false;
 
