@@ -435,8 +435,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             }
         case KC_UP:
         case KC_DOWN:
-        case KC_LEFT:
-        case KC_RGHT:
         case KC_ENT:
         case KC_PGUP:
         case KC_PGDN:
@@ -446,6 +444,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case WORD_R:
         case LINE_L:
         case LINE_R:
+        case KC_LCTL:
         case TAB_L:
         case TAB_R:
         case CLOSE_W:
@@ -461,6 +460,27 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 semicolon_nav_activated = 2;
                 break;
             }
+
+            break;
+
+        case KC_LEFT:
+            semicolon_nav_activated = 2;
+            if (get_mods() & MOD_BIT(KC_LCTL) && record->event.pressed)
+            {
+                SEND_STRING(SS_LSFT(SS_TAP(X_TAB)));
+                return false;
+            }
+            break;
+
+        case KC_RGHT:
+            semicolon_nav_activated = 2;
+            if (get_mods() & MOD_BIT(KC_LCTL) && record->event.pressed)
+            {
+                SEND_STRING(SS_TAP(X_TAB));
+                return false;
+            }
+            break;
+
     }
 
     return true;
@@ -473,6 +493,7 @@ static uint16_t shift_timer;
 float song_shift_0[][2] = SONG(S__NOTE(_F3));
 float song_shift_1[][2] = SONG(S__NOTE(_G3));
 float song_shift_2[][2] = SONG(S__NOTE(_A3));
+float song_shift_3[][2] = SONG(S__NOTE(_B3),S__NOTE(_C4),S__NOTE(_D4));
 
 void exit_shifted_underscoring(void) {
     if (shift_state == 0)
@@ -485,7 +506,6 @@ void exit_shifted_underscoring(void) {
 bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case KC_LSFT:
-        case KC_RSFT:
             if (timer_elapsed(shift_timer) < 250)
             {
                 if (record->event.pressed)
@@ -535,7 +555,7 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
             break;
         default:
             // other keys should immediately cancel
-            if (keycode < KC_A || keycode > KC_0)
+            if (record->event.pressed && (keycode < KC_A || keycode > KC_0))
                 exit_shifted_underscoring();
             break;
     }
