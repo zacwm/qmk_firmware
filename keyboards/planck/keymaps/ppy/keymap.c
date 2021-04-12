@@ -46,9 +46,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
-            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, LINE_L,  _______, _______, _______,
-            _______, LINE_R,  _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
-            _______, _______, CLOSE_W, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
+            _______, _______, WORD_R,  WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
+            _______, LINE_R,  _______, KC_PGDN, _______, _______, TAB_L,   KC_DOWN, KC_UP,   TAB_R,   _______, _______,
+            _______, _______, CLOSE_W, KC_LEFT, _______, WORD_L,  _______, _______, KC_RGHT, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
@@ -423,6 +423,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case WORD_R:
         case LINE_L:
         case LINE_R:
+        case TAB_L:
+        case TAB_R:
         case CLOSE_W:
             if (semicolon_nav_activated == 1)
             {
