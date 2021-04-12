@@ -164,72 +164,90 @@ bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-static uint16_t grave_surround_timer;
+void grave_commit(void)
+{
+    switch (grave_surround_state)
+    {
+        case 1:
+            tap_code16(KC_RGHT);
+            tap_code16(KC_BSPC);
+            tap_code16(KC_BSPC);
+            break;
+
+        case 2:
+            tap_code16(KC_RGHT);
+            break;
+    }
+
+    grave_surround_state = 0;
+}
 
 bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
-    // exit via arbitrary key
-    if (get_mods() == 0 && (keycode == KC_SPC || keycode == KC_ENT))
-    {
-        if (record->event.pressed)
-        {
-            switch (grave_surround_state)
-            {
-                case 1:
-                    tap_code16(KC_RGHT);
-                    tap_code16(KC_BSPC);
-                    tap_code16(KC_BSPC);
-                    break;
+    if (!record->event.pressed)
+        return true;
 
-                case 2:
-                    tap_code16(KC_RGHT);
-                    break;
+    uint8_t mod_state = get_mods();
+
+    bool enter_via_lshift = keycode == KC_LSFT && mod_state & MOD_BIT(KC_RSFT);
+    bool enter_via_rshift = keycode == KC_RSFT && mod_state & MOD_BIT(KC_LSFT);
+
+    switch (grave_surround_state)
+    {
+        case 0:
+            // enter via shift+lower
+            if (enter_via_lshift || enter_via_rshift) {
+                unregister_code(KC_LSFT);
+                unregister_code(KC_RSFT);
+
+                // begin grave surround sequence.
+                tap_code16(KC_GRV);
+                tap_code16(KC_GRV);
+                tap_code16(KC_LEFT);
+                grave_surround_state = 1;
+
+                set_mods(mod_state);
+                return true;
             }
 
-            grave_surround_state = 0;
-        }
+            break;
+        default:
+            switch (keycode) {
+                case KC_LSFT:
+                case KC_RSFT:
+                case KC_LCTL:
+                    // don't consume lower from keys that aren't meaninful.
+                    break;
 
-        return true;
-    }
+                case KC_SPC:
+                case KC_ESC:
+                case CTRL_ESC:
+                    // exit via various commit keys
+                    grave_commit();
+                    break;
 
-    // exit or enter via lower
-    if (keycode == LOWER)
-    {
-        if (!record->event.pressed && lower_consumed == 0 && get_mods() == 0)
-        {
-            switch (grave_surround_state)
-            {
-                case 0:
-                    if (timer_elapsed(grave_surround_timer) < 250)
+                case KC_BSPC:
+                    // only handle if not consumed (we might be backspacing within a surround).
+                    if (grave_surround_state == 1)
                     {
-                        // begin grave surround sequence.
-                        tap_code16(KC_GRV);
-                        tap_code16(KC_GRV);
-                        tap_code16(KC_LEFT);
-                        grave_surround_state = 1;
+                        grave_commit();
+                        return false;
                     }
+
                     break;
-                case 1:
-                    // end via cancel
-                    tap_code16(KC_RGHT);
-                    tap_code16(KC_BSPC);
-                    tap_code16(KC_BSPC);
-                    grave_surround_state = 0;
-                    break;
-                case 2:
-                    // end via commit
-                    tap_code16(KC_RGHT);
-                    grave_surround_state = 0;
+
+                case KC_ENT:
+                    // exit via enter
+                    grave_commit();
+                    return false;
+
+                default:
+                    // or consume on any other key
+                    grave_surround_state = 2;
                     break;
             }
-        }
 
-
-        grave_surround_timer = timer_read();
-        return true;
+            break;
     }
-
-    if (grave_surround_state == 1)
-        grave_surround_state = 2;
 
     return true;
 }
@@ -264,6 +282,11 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
         if (lower_consumed != 1)
         {
             switch (keycode) {
+                case KC_LSFT:
+                case KC_RSFT:
+                    // don't consume lower from keys that aren't meaninful.
+                    return true;
+
                 case KC_LCBR:
                     if (last_was_number)
                     {
@@ -296,11 +319,11 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
                 }
                 break;
         }
-    }
 
-    // only upgrade from initial state. 2 is capturing
-    if (lower_consumed == 0)
-        lower_consumed = 1;
+        // only upgrade from initial state. 2 is capturing
+        if (lower_consumed == 0)
+            lower_consumed = 1;
+    }
 
     return true;
 }
@@ -614,14 +637,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_macros(keycode, record)) return false;
 
-    if (!(IS_GAME))
-    {
-        // must be processed before grave to allow underscoring inside surround.
-        if (!process_shifted_underscoring(keycode, record)) return false;
-
-        if (!process_grave_surround(keycode, record)) return false;
-    }
-
     if (!process_lower_specials(keycode, record)) return false;
 
     if (!process_game_specials(keycode, record)) return false;
@@ -629,6 +644,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_nav_scln(keycode, record)) return false;
 
     if (IS_GAME) return true;
+
+    // must be processed before grave to allow underscoring inside surround.
+    if (!process_shifted_underscoring(keycode, record)) return false;
+
+    if (!process_grave_surround(keycode, record)) return false;
 
     if (!process_record_vimlayer(keycode, record)) return false;
 
