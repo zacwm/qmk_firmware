@@ -33,6 +33,9 @@ enum planck_keycodes {
 #define LINE_L LCTL(KC_LEFT)
 #define LINE_R LCTL(KC_RIGHT)
 
+#define TAB_L LCTL(LSFT(KC_TAB))
+#define TAB_R LCTL(KC_TAB)
+
 #define CLOSE_W LGUI(KC_W)
 
 #define PASTE LGUI(KC_V)
