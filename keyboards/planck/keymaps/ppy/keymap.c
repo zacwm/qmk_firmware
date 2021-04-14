@@ -297,7 +297,6 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
                     }
                     break;
                 case KC_SPC:
-                    // todo: only register LSFT to allow for key repeat.
                     register_code(KC_LSFT);
                     lower_consumed = 3;
                     return true;
@@ -323,6 +322,18 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
         // only upgrade from initial state. 2 is capturing
         if (lower_consumed == 0)
             lower_consumed = 1;
+    }
+    else
+    {
+        if (lower_consumed != 1)
+        {
+            switch (keycode) {
+                case KC_SPC:
+                    unregister_code(KC_LSFT);
+                    lower_consumed = 0;
+                    return true;
+            }
+        }
     }
 
     return true;
