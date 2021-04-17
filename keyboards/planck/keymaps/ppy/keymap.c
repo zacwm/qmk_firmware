@@ -82,6 +82,7 @@ static int meh_activated;
 // 0 - not activated
 // 1 - pressed (waiting to decide on semicolon or nav)
 // 2 - consumed (upgraded to semicolon or used in nav layer)
+// 3 - consumed (as ctrl-tab rotation)
 static int semicolon_nav_activated;
 
 // keep track of the current kvm target (to play a different sound on switch).
@@ -460,11 +461,13 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case NAV_SCLN:
             if (record->event.pressed) {
-                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 250)
+                // timer case here is just to give more immediacy to semicolons when typing at EOL.
+                // set low enough to not impede intended navigation
+                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 150)
                 {
                     register_code16(KC_SCLN);
                     semicolon_nav_activated = 2;
-                    return false;
+                    return true;
                 }
 
                 semicolon_nav_activated = 1;
@@ -473,11 +476,20 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             }
             else
             {
-                if (semicolon_nav_activated == 1)
-                    tap_code16(KC_SCLN);
+                switch (semicolon_nav_activated)
+                {
+                    case 1:
+                        tap_code16(KC_SCLN);
+                        break;
+                    case 2:
+                        unregister_code16(KC_SCLN);
+                        break;
+                    case 3:
+                        unregister_code16(KC_LSFT);
+                        break;
+                }
 
                 semicolon_nav_activated = 0;
-                unregister_code16(KC_SCLN);
                 layer_off(_NAV);
                 return false;
             }
@@ -502,6 +514,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 return true;
             }
         default:
+            // note that last_key_time will not be updated from the SCLN_NAV keypress itself.
+            // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
             {
                 tap_code16(KC_SCLN);
@@ -512,21 +526,33 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_LEFT:
-            semicolon_nav_activated = 2;
-            if (get_mods() & MOD_BIT(KC_LCTL) && record->event.pressed)
+            if (!record->event.pressed || semicolon_nav_activated == 0)
+                break;
+
+            if (get_mods() & MOD_BIT(KC_LCTL))
             {
-                SEND_STRING(SS_LSFT(SS_TAP(X_TAB)));
+                register_code16(KC_LSFT);
+                tap_code16(KC_TAB);
+                semicolon_nav_activated = 3;
                 return false;
             }
+            else
+                semicolon_nav_activated = 2;
             break;
 
         case KC_RGHT:
-            semicolon_nav_activated = 2;
-            if (get_mods() & MOD_BIT(KC_LCTL) && record->event.pressed)
+            if (!record->event.pressed || semicolon_nav_activated == 0)
+                break;
+
+            if (get_mods() & MOD_BIT(KC_LCTL))
             {
-                SEND_STRING(SS_TAP(X_TAB));
+                unregister_code16(KC_LSFT);
+                tap_code16(KC_TAB);
+                semicolon_nav_activated = 3;
                 return false;
             }
+            else
+                semicolon_nav_activated = 2;
             break;
 
     }
@@ -727,10 +753,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_meh(keycode, record)) return false;
 
-    last_key_time = timer_read();
+    if (record->event.pressed)
+        last_key_time = timer_read();
 
     update_last_was_number(keycode, record);
-
     return true;
 }
 
