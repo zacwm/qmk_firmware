@@ -460,10 +460,11 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case NAV_SCLN:
             if (record->event.pressed) {
-                if (get_mods() & MOD_BIT(KC_LSFT))
+                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 250)
                 {
-                    tap_code16(KC_COLN);
-                    return true;
+                    register_code16(KC_SCLN);
+                    semicolon_nav_activated = 2;
+                    return false;
                 }
 
                 semicolon_nav_activated = 1;
@@ -476,6 +477,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                     tap_code16(KC_SCLN);
 
                 semicolon_nav_activated = 0;
+                unregister_code16(KC_SCLN);
                 layer_off(_NAV);
                 return false;
             }
@@ -500,7 +502,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 return true;
             }
         default:
-            if (semicolon_nav_activated == 1)
+            if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
             {
                 tap_code16(KC_SCLN);
                 semicolon_nav_activated = 2;
