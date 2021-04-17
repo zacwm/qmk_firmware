@@ -70,11 +70,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______)
 };
 
-// track the state of CTRL_ESC over multiple key presses.
-// 0 - not activated
-// 1 - pressed (esc activated and held)
-// 2 - consumed (upgraded to ctrl or autoexited on special case keys)
-static int ctrl_escape_activated;
+// track the time of the last key input.
+static uint16_t last_key_time;
 
 // track the state of MEH over multiple key presses.
 // 0 - not activated
@@ -377,12 +374,37 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+// track the state of CTRL_ESC over multiple key presses.
+// 0 - not activated
+// 1 - pressed (esc activated, ctrl pending on next keystroke)
+// 2 - pressed (ctrl activated, esc pending on CTRL_ESC release if no combo consumption)
+// 3 - consumed (upgraded to ctrl or autoexited on special case keys)
+static int ctrl_escape_activated;
+
+// ctrl-esc has two modes of activation depending on how long since the last key press.
+// the assumption is that if it is pressed soon after another key, it is probably intended to be escape
+// (ie. for vim insert mode exit), but if pressed out of the blue it's more likely to be a ctrl key.
+//
+// if pressed with no recent key presses, it will begin in ctrl mode, and only actuate an escape press
+// on release (if not consumed as control). this allows for ctrl combos without an unnecessary escape fire.
+//
+// if pressed after a recent key, it will begin in esc mode, and only actuate a control press if another
+// key is pressed during the hold.
 bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
-                register_code(KC_ESC);
-                ctrl_escape_activated = 1;
+                if (timer_elapsed(last_key_time) < 250)
+                {
+                    register_code(KC_ESC);
+                    ctrl_escape_activated = 1;
+                }
+                else
+                {
+                    register_code(KC_LCTL);
+                    ctrl_escape_activated = 2;
+
+                }
                 return false;
             }
             else
@@ -390,7 +412,12 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_ESC);
                 unregister_code(KC_LCTL);
 
-                if (ctrl_escape_activated == 1)
+                if (ctrl_escape_activated == 2)
+                {
+                    tap_code16(KC_ESC);
+                }
+
+                if (ctrl_escape_activated < 3)
                 {
                     if (IS_LAYER_ON(_VINSERT))
                         layer_move(_VIM);
@@ -401,19 +428,27 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
             }
         case KC_J:
         case KC_K:
-            if (ctrl_escape_activated == 1)
+            // these are keys we never expect to be ctrl combos, so remove the ctrl down state
+            // to avoid misfires from releasing esc too late.
+            if (ctrl_escape_activated == 2)
             {
                 unregister_code(KC_LCTL);
-                ctrl_escape_activated = 2;
-                return true;
+                ctrl_escape_activated = 3;
             }
             break;
         default:
-            if (ctrl_escape_activated == 1)
+            switch (ctrl_escape_activated)
             {
-                unregister_code(KC_ESC);
-                register_code(KC_LCTL);
-                ctrl_escape_activated = 2;
+                case 1:
+                    // ctrl combo capture.
+                    unregister_code(KC_ESC);
+                    register_code(KC_LCTL);
+                    ctrl_escape_activated = 3;
+                    break;
+                case 2:
+                    // consumption.
+                    ctrl_escape_activated = 3;
+                    break;
             }
             break;
     }
@@ -689,6 +724,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_ctrl_esc(keycode, record)) return false;
 
     if (!process_meh(keycode, record)) return false;
+
+    last_key_time = timer_read();
 
     update_last_was_number(keycode, record);
 
