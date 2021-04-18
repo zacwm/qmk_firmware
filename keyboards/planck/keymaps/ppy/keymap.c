@@ -33,6 +33,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    [_MEH] = LAYOUT_planck_grid(
+            _______, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, VIM_START,_______,_______, _______, CAP_IMG, CAP_MOV),
+
     [_GAME] = LAYOUT_planck_grid(
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             KC_LSFT, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
@@ -75,7 +81,8 @@ static uint16_t last_key_time;
 
 // track the state of MEH over multiple key presses.
 // 0 - not activated
-// 1 - activated
+// 1 - pressed but waiting activation
+// 2 - activated MEH combo
 static int meh_activated;
 
 // track the state of NAV_SCLN
@@ -341,35 +348,35 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case MEH:
             if (record->event.pressed) {
-                register_code(KC_LCTL);
-                register_code(KC_LSFT);
-                register_code(KC_LALT);
                 meh_activated = 1;
+                layer_on(_MEH);
             }
             else
             {
                 unregister_code(KC_LCTL);
                 unregister_code(KC_LSFT);
                 unregister_code(KC_LALT);
+                layer_off(_MEH);
                 meh_activated = 0;
             }
 
-            return true;
-        case KC_Q:
-            if (meh_activated == 1)
-            {
-                unregister_code(KC_LCTL);
-                unregister_code(KC_LSFT);
-                unregister_code(KC_LALT);
-
-                // lock windows
-                SEND_STRING(SS_LGUI(SS_TAP(X_L)));
-                // lock macOS and turn off screen
-                SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
-                meh_activated = 0;
-                return false;
-            }
             break;
+        default:
+            if (record->event.pressed && meh_activated == 1)
+            {
+                register_code(KC_LCTL);
+                register_code(KC_LSFT);
+                register_code(KC_LALT);
+                meh_activated = 2;
+            }
+
+            break;
+        case LOCK:
+            // lock windows
+            SEND_STRING(SS_LGUI(SS_TAP(X_L)));
+            // lock macOS and turn off screen
+            SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
+            return false;
     }
 
     return true;
