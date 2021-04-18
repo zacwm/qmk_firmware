@@ -135,11 +135,20 @@ void set_game_mode(bool state, bool update_target_state)
 }
 
 bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == GAME && record->event.pressed)
+    if (keycode == GAME)
     {
-        set_game_mode(!(IS_GAME), true);
+        if (record->event.pressed)
+            set_game_mode(!(IS_GAME), true);
         return false;
     }
+
+    // turn off game mode on alt-tab
+    if (keycode == KC_TAB && (get_mods() & MOD_BIT(KC_LALT)))
+    {
+        if (record->event.pressed)
+            set_game_mode(false, true);
+    }
+
 
     return true;
 }
