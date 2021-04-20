@@ -496,6 +496,9 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 switch (semicolon_nav_activated)
                 {
                     case 1:
+                        // clears a potential ctrl modifier from CTRL_ESC.
+                        // sequence of events is SCLN down - wait 500ms - CTRL_ESC down - SCLN up - CTRL_ESC up
+                        clear_mods();
                         tap_code16(KC_SCLN);
                         break;
                     case 2:
@@ -530,16 +533,21 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 semicolon_nav_activated = 2;
                 return true;
             }
-        default:
+        case CTRL_ESC:
             // note that last_key_time will not be updated from the SCLN_NAV keypress itself.
             // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
             {
                 tap_code16(KC_SCLN);
                 semicolon_nav_activated = 2;
-                break;
             }
-
+            break;
+        default:
+            if (semicolon_nav_activated == 1)
+            {
+                tap_code16(KC_SCLN);
+                semicolon_nav_activated = 2;
+            }
             break;
 
         case KC_LEFT:
