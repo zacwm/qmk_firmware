@@ -208,7 +208,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     switch (grave_surround_state)
     {
         case 0:
-            // enter via shift+lower
+            // enter via shift+shift
             if (enter_via_lshift || enter_via_rshift) {
                 unregister_code(KC_LSFT);
                 unregister_code(KC_RSFT);
@@ -219,7 +219,8 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 tap_code16(KC_LEFT);
                 grave_surround_state = 1;
 
-                set_mods(mod_state);
+                register_code(KC_LSFT);
+                register_code(KC_RSFT);
                 return true;
             }
 
