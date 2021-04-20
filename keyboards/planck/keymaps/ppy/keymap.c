@@ -421,9 +421,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                 {
                     register_code(KC_LCTL);
                     ctrl_escape_activated = 2;
-
                 }
-                return false;
             }
             else
             {
@@ -442,8 +440,9 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                 }
 
                 ctrl_escape_activated = 0;
-                return false;
             }
+
+            return true;
         case KC_J:
         case KC_K:
             // these are keys we never expect to be ctrl combos, so remove the ctrl down state
@@ -778,7 +777,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_meh(keycode, record)) return false;
 
-    if (record->event.pressed)
+    // in the case of CTRL_ESC, don't update on pressed to allow for CTRL_ESC+SLCN_NAV combo.
+    // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
+    if (record->event.pressed != (keycode == CTRL_ESC))
         last_key_time = timer_read();
 
     update_last_was_number(keycode, record);
