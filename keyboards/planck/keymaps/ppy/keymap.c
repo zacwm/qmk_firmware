@@ -421,6 +421,11 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
             }
 
             break;
+        case CAP_MOV:
+        case CAP_IMG:
+            // don't want these to trigger the down codes of MEH.
+            // bit ugly to have this here; probably need to rethink this logic.
+            break;
         case LOCK:
             // lock windows
             SEND_STRING(SS_LGUI(SS_TAP(X_L)));
