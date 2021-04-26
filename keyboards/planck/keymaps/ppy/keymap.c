@@ -79,6 +79,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // track the time of the last key input.
 static uint16_t last_key_time;
 
+// track the last keycode pressed.
+static uint16_t last_key_code;
+
 // track the state of MEH over multiple key presses.
 // 0 - not activated
 // 1 - pressed but waiting activation
@@ -134,21 +137,58 @@ void set_game_mode(bool state, bool update_target_state)
     }
 }
 
+int game_mode_tri_key_activate;
+
 bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == GAME)
-    {
-        if (record->event.pressed)
-            set_game_mode(!(IS_GAME), true);
-        return false;
-    }
 
-    // turn off game mode on alt-tab
-    if (keycode == KC_TAB && (get_mods() & MOD_BIT(KC_LALT)))
-    {
-        if (record->event.pressed)
-            set_game_mode(false, true);
-    }
+    if (!record->event.pressed)
+        return true;
 
+    bool isGameMode = IS_GAME;
+
+    switch (keycode)
+    {
+        case GAME:
+            set_game_mode(!isGameMode, true);
+            return false;
+        case KC_TAB:
+            // turn off game mode on alt-tab
+            if (isGameMode && get_mods() & MOD_BIT(KC_LALT))
+            {
+                if (record->event.pressed)
+                    set_game_mode(false, true);
+            }
+            break;
+        case KC_A:
+            if (isGameMode)
+                break;
+
+            game_mode_tri_key_activate = 1;
+            break;
+        case KC_S:
+            if (isGameMode || game_mode_tri_key_activate != 1)
+            {
+                game_mode_tri_key_activate = 0;
+                break;
+            }
+
+            if (get_mods() == 0 && last_key_code == KC_A && timer_elapsed(last_key_time) < 200)
+                game_mode_tri_key_activate = 2;
+            else
+                game_mode_tri_key_activate = 0;
+            break;
+        case KC_D:
+            if (isGameMode || game_mode_tri_key_activate != 2)
+            {
+                game_mode_tri_key_activate = 0;
+                break;
+            }
+
+            if (get_mods() == 0 && last_key_code == KC_S && timer_elapsed(last_key_time) < 200)
+                set_game_mode(true, true);
+            game_mode_tri_key_activate = 0;
+            break;
+    }
 
     return true;
 }
@@ -780,7 +820,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // in the case of CTRL_ESC, don't update on pressed to allow for CTRL_ESC+SLCN_NAV combo.
     // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
     if (record->event.pressed != (keycode == CTRL_ESC))
+    {
         last_key_time = timer_read();
+        last_key_code = keycode;
+    }
 
     update_last_was_number(keycode, record);
     return true;
