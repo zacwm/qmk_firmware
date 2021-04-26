@@ -427,10 +427,12 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
             // bit ugly to have this here; probably need to rethink this logic.
             break;
         case LOCK:
-            // lock windows
-            SEND_STRING(SS_LGUI(SS_TAP(X_L)));
-            // lock macOS and turn off screen
-            SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
+            if (record->event.pressed) {
+                // lock windows
+                SEND_STRING(SS_LGUI(SS_TAP(X_L)));
+                // lock macOS and turn off screen
+                SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
+            }
             return false;
     }
 
