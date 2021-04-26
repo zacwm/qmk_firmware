@@ -44,3 +44,6 @@ enum planck_keycodes {
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
+
+#define XBX_IMG LGUI(LALT(KC_PSCR))     // Capture portion of screen
+#define XBX_MOV LGUI(LALT(KC_G))        // Capture portion of screen
