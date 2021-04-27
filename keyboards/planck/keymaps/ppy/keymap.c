@@ -828,8 +828,65 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
     if (record->event.pressed != (keycode == CTRL_ESC))
     {
-        last_key_time = timer_read();
-        last_key_code = keycode;
+        switch (keycode)
+        {
+            case KC_A:
+            case KC_B:
+            case KC_C:
+            case KC_D:
+            case KC_E:
+            case KC_F:
+            case KC_G:
+            case KC_H:
+            case KC_I:
+            case KC_J:
+            case KC_K:
+            case KC_L:
+            case KC_M:
+            case KC_N:
+            case KC_O:
+            case KC_P:
+            case KC_Q:
+            case KC_R:
+            case KC_S:
+            case KC_T:
+            case KC_U:
+            case KC_V:
+            case KC_W:
+            case KC_X:
+            case KC_Y:
+            case KC_Z:
+            case KC_1:
+            case KC_2:
+            case KC_3:
+            case KC_4:
+            case KC_5:
+            case KC_6:
+            case KC_7:
+            case KC_8:
+            case KC_9:
+            case KC_0:
+            case KC_ENT:
+            case KC_ESC:
+            case KC_BSPC:
+            case KC_TAB:
+            case KC_SPC:
+            case KC_MINS:
+            case KC_EQL:
+            case KC_LBRC:
+            case KC_RBRC:
+            case KC_BSLS:
+            case KC_NUHS:
+            case KC_SCLN:
+            case KC_QUOT:
+            case KC_GRV:
+            case KC_COMM:
+            case KC_DOT:
+            case KC_SLSH:
+                last_key_time = timer_read();
+                last_key_code = keycode;
+                break;
+        }
     }
 
     update_last_was_number(keycode, record);
