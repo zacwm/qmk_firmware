@@ -353,18 +353,6 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
             }
         }
 
-        switch (keycode) {
-            case KC_LCBR:
-                if (last_was_number)
-                {
-                    // curly becomes dot when in numeric sequence.
-                    tap_code16(KC_DOT);
-                    lower_consumed = 1;
-                    return false;
-                }
-                break;
-        }
-
         // only upgrade from initial state. 2 is capturing
         if (lower_consumed == 0)
             lower_consumed = 1;
@@ -481,16 +469,6 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
             }
 
             return true;
-        case KC_J:
-        case KC_K:
-            // these are keys we never expect to be ctrl combos, so remove the ctrl down state
-            // to avoid misfires from releasing esc too late.
-            if (ctrl_escape_activated == 2)
-            {
-                unregister_code(KC_LCTL);
-                ctrl_escape_activated = 3;
-            }
-            break;
         default:
             switch (ctrl_escape_activated)
             {
