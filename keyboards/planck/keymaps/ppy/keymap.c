@@ -386,6 +386,12 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LSFT);
                 unregister_code(KC_LALT);
                 layer_off(_MEH);
+
+                // MEH key acts like copy if MEH is not used in a combo.
+                // this is a pretty non-destructive action even if accidentally triggered.
+                if (meh_activated < 2)
+                    SEND_STRING(SS_LGUI("c"));
+
                 meh_activated = 0;
             }
 
@@ -404,6 +410,7 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
         case CAP_IMG:
             // don't want these to trigger the down codes of MEH.
             // bit ugly to have this here; probably need to rethink this logic.
+            meh_activated = 2;
             break;
         case LOCK:
             if (record->event.pressed) {
@@ -412,6 +419,7 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 // lock macOS and turn off screen
                 SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
             }
+            meh_activated = 2;
             return false;
     }
 
