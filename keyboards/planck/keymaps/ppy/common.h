@@ -25,6 +25,7 @@ enum planck_keycodes {
     GAME,
     MEH,
     LOCK,
+    GRV_ESC,
 };
 
 #define FKEYS MO(_FKEYS)

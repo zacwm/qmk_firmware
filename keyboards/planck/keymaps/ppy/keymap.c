@@ -17,7 +17,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   RAISE,   LOWER,   KC_SPC,  KC_ENT,  KC_MINS, KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, FKEYS,   RAISE,   LOWER,   KC_SPC,  KC_ENT,  GRV_ESC, KVM_SWT, COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
@@ -236,31 +236,21 @@ void grave_commit(void)
     grave_surround_state = 0;
 }
 
-bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
+bool process_grave_surround(uint16_t keycode, keyrecord_t *record)
+{
     if (!record->event.pressed)
         return true;
-
-    uint8_t mod_state = get_mods();
-
-    bool enter_via_lshift = keycode == KC_LSFT && mod_state & MOD_BIT(KC_RSFT);
-    bool enter_via_rshift = keycode == KC_RSFT && mod_state & MOD_BIT(KC_LSFT);
 
     switch (grave_surround_state)
     {
         case 0:
-            // enter via shift+shift
-            if (enter_via_lshift || enter_via_rshift) {
-                unregister_code(KC_LSFT);
-                unregister_code(KC_RSFT);
-
+            if (keycode == GRV_ESC)
+            {
                 // begin grave surround sequence.
                 tap_code16(KC_GRV);
                 tap_code16(KC_GRV);
                 tap_code16(KC_LEFT);
                 grave_surround_state = 1;
-
-                register_code(KC_LSFT);
-                register_code(KC_RSFT);
                 return true;
             }
 
@@ -275,6 +265,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
 
                 case KC_SPC:
                 case KC_ESC:
+                case GRV_ESC:
                 case CTRL_ESC:
                     // exit via various commit keys
                     grave_commit();
