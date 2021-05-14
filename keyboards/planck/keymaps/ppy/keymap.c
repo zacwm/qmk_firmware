@@ -265,6 +265,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record)
 
                 case KC_SPC:
                 case KC_ESC:
+                case KC_COMM:
                 case GRV_ESC:
                 case CTRL_ESC:
                     // exit via various commit keys
