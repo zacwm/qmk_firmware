@@ -17,20 +17,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   RAISE,   LOWER,   KC_SPC,  KC_ENT,  GRV_ESC, KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_BSPC, LOWER,   KC_SPC,  KC_ENT,  GRV_ESC, KVM_SWT, COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_LCBR, KC_LBRC, KC_RBRC, KC_RCBR, _______,
             _______, KC_EXLM, KC_AT,   DEV_OR,  DEV_AND, KC_LT,   KC_GT,   KC_UNDS, _______, _______, KC_BSLS, KC_MINS,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
-
-    // this is mainly here just to use layer_state_set_user
-    // raise layer is actually a LGUI key, so any keys here would currently be prefixed with LGUI.
-    [_RAISE] = LAYOUT_planck_grid(
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_MEH] = LAYOUT_planck_grid(
@@ -58,10 +50,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
-            _______, RGB_HUI, RGB_HUD, _______, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, KC_DEL,
+            _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
             _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, _______, _______, _______,
             _______, _______, _______, KC_LOCK,VIM_START,_______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
-            RESET,   RGB_TOG, _______, _______, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV),
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_VIM] = LAYOUT_planck_grid(
             _______, _______, VIM_W,   VIM_E,   VIM_R,   _______, VIM_Y,   VIM_U,   VIM_I,   VIM_O,   VIM_P,   _______,
@@ -93,6 +85,7 @@ static int meh_activated;
 // 1 - pressed (waiting to decide on semicolon or nav)
 // 2 - consumed (upgraded to semicolon or used in nav layer)
 // 3 - consumed (as ctrl-tab rotation)
+// 4 - consumed (as cmd)
 static int semicolon_nav_activated;
 
 // keep track of the current kvm target (to play a different sound on switch).
@@ -108,12 +101,6 @@ static int game_target = -1;
 // 1  - consumed by standard case
 // 2+ - consumed by special case
 static int lower_consumed;
-
-// whether a key combination was typed after raise layer switch (cmd+x)
-// 0  - not consumed
-// 1  - consumed by standard case
-// 2+ - consumed by special case
-static int raise_consumed;
 
 // track the state of grave surround
 // 0 - not activated
@@ -194,69 +181,6 @@ bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
                 set_game_mode(true, true);
             game_mode_tri_key_activate = 0;
             break;
-    }
-
-    return true;
-}
-
-bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
-    if (keycode != RAISE)
-    {
-        if (raise_consumed == 0)
-            raise_consumed = 1;
-        return true;
-    }
-
-    if (record->event.pressed)
-    {
-        if (get_mods() & MOD_BIT(KC_LCTL) || (last_key_code == RAISE && timer_elapsed(last_key_time) < 300))
-        {
-            uint8_t mod_state = get_mods();
-            clear_mods();
-
-            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-            raise_consumed = 2;
-
-            set_mods(mod_state);
-        }
-        else
-        {
-            raise_consumed = 0;
-            layer_on(_RAISE);
-            if (IS_GAME)
-                register_code(KC_SPC);
-            else
-                register_code(KC_LGUI);
-        }
-    }
-    else
-    {
-        layer_off(_RAISE);
-        unregister_code(KC_SPC);
-        unregister_code(KC_LGUI);
-
-        switch (raise_consumed)
-        {
-            case 0:
-                if (timer_elapsed(last_key_time) > 250)
-                    break;
-
-                if (get_mods() & MOD_BIT(KC_LCTL))
-                {
-                    uint8_t mod_state = get_mods();
-                    clear_mods();
-
-                    SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-                    raise_consumed = 2;
-
-                    set_mods(mod_state);
-                }
-                else
-                {
-                    tap_code16(KC_BSPC);
-                }
-                break;
-        }
     }
 
     return true;
@@ -382,6 +306,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
                     register_code(KC_LSFT);
                     lower_consumed = 3;
                     return true;
+                // dead use case.
                 case KC_BSPC:
                     SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
                     lower_consumed = 2;
@@ -566,6 +491,9 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                     case 3:
                         unregister_code16(KC_LSFT);
                         break;
+                    case 4:
+                        unregister_code16(KC_LGUI);
+                        break;
                 }
 
                 semicolon_nav_activated = 0;
@@ -574,19 +502,14 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             }
         case KC_UP:
         case KC_DOWN:
-        case KC_ENT:
         case KC_PGUP:
         case KC_PGDN:
-        case KC_LSFT:
-        case KC_RSFT:
         case WORD_L:
         case WORD_R:
         case LINE_L:
         case LINE_R:
-        case KC_LCTL:
         case TAB_L:
         case TAB_R:
-        case CLOSE_W:
             if (semicolon_nav_activated == 1)
             {
                 semicolon_nav_activated = 2;
@@ -604,8 +527,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         default:
             if (semicolon_nav_activated == 1)
             {
-                tap_code16(KC_SCLN);
-                semicolon_nav_activated = 2;
+                register_code16(KC_LGUI);
+                semicolon_nav_activated = 4;
             }
             break;
 
@@ -815,7 +738,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_BSPC:
-            if (get_mods() & MOD_BIT(KC_LCTL))
+            if (get_mods() & MOD_BIT(KC_LCTL) || (last_key_code == KC_BSPC && timer_elapsed(last_key_time) < 500))
             {
                 uint8_t mod_state = get_mods();
                 clear_mods();
@@ -857,8 +780,6 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
-    if (!process_raise_specials(keycode, record)) return false;
-
     if (!process_macros(keycode, record)) return false;
 
     if (!process_lower_specials(keycode, record)) return false;
@@ -908,5 +829,5 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
+    return update_tri_layer_state(state, _LOWER, _MEH, _ADJUST);
 }

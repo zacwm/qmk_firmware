@@ -3,7 +3,6 @@
 enum planck_layers {
     _QWERTY,
     _LOWER,
-    _RAISE,
     _MEH,
     _GAME,
     _FKEYS,
@@ -21,7 +20,6 @@ enum planck_keycodes {
     KVM_SWT,
     COPY,
     LOWER,
-    RAISE,
     GAME,
     MEH,
     LOCK,
@@ -40,8 +38,6 @@ enum planck_keycodes {
 
 #define TAB_L LCTL(LSFT(KC_TAB))
 #define TAB_R LCTL(KC_TAB)
-
-#define CLOSE_W LGUI(KC_W)
 
 #define PASTE LGUI(KC_V)
 
