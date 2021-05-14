@@ -812,8 +812,7 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-
+bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!process_raise_specials(keycode, record)) return false;
 
     if (!process_macros(keycode, record)) return false;
@@ -829,6 +828,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // must be processed before grave to allow underscoring inside surround.
     if (!process_shifted_underscoring(keycode, record)) return false;
 
+    if (!process_right_shift(keycode, record)) return false;
+
     if (!process_grave_surround(keycode, record)) return false;
 
     if (!process_record_vimlayer(keycode, record)) return false;
@@ -837,65 +838,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_meh(keycode, record)) return false;
 
+    return true;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    bool retval = process_all_custom(keycode, record);
+
     // in the case of CTRL_ESC, don't update on pressed to allow for CTRL_ESC+SLCN_NAV combo.
     // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
     if (record->event.pressed != (keycode == CTRL_ESC))
     {
         switch (keycode)
         {
-            case KC_A:
-            case KC_B:
-            case KC_C:
-            case KC_D:
-            case KC_E:
-            case KC_F:
-            case KC_G:
-            case KC_H:
-            case KC_I:
-            case KC_J:
-            case KC_K:
-            case KC_L:
-            case KC_M:
-            case KC_N:
-            case KC_O:
-            case KC_P:
-            case KC_Q:
-            case KC_R:
-            case KC_S:
-            case KC_T:
-            case KC_U:
-            case KC_V:
-            case KC_W:
-            case KC_X:
-            case KC_Y:
-            case KC_Z:
-            case KC_1:
-            case KC_2:
-            case KC_3:
-            case KC_4:
-            case KC_5:
-            case KC_6:
-            case KC_7:
-            case KC_8:
-            case KC_9:
-            case KC_0:
-            case KC_ENT:
-            case KC_ESC:
-            case KC_BSPC:
-            case KC_TAB:
-            case KC_SPC:
-            case KC_MINS:
-            case KC_EQL:
-            case KC_LBRC:
-            case KC_RBRC:
-            case KC_BSLS:
-            case KC_NUHS:
-            case KC_SCLN:
-            case KC_QUOT:
-            case KC_GRV:
-            case KC_COMM:
-            case KC_DOT:
-            case KC_SLSH:
+            // TODO: add back any exceptions to the rule here
+            default:
                 last_key_time = timer_read();
                 last_key_code = keycode;
                 break;
@@ -903,7 +860,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     update_last_was_number(keycode, record);
-    return true;
+    return retval;
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
