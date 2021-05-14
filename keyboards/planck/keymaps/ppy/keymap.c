@@ -634,7 +634,7 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
                             break;
                         case 3:
                             PLAY_SONG(song_shift_3);
-                            SEND_STRING("```csharp" SS_TAP(X_ENT) SS_TAP(X_ENT) "```");
+                            SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
                             SEND_STRING(SS_TAP(X_LEFT) SS_TAP(X_LEFT) SS_TAP(X_LEFT) SS_TAP(X_LEFT));
                             exit_shifted_underscoring();
                             break;
