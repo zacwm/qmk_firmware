@@ -109,6 +109,12 @@ static int game_target = -1;
 // 2+ - consumed by special case
 static int lower_consumed;
 
+// whether a key combination was typed after raise layer switch (cmd+x)
+// 0  - not consumed
+// 1  - consumed by standard case
+// 2+ - consumed by special case
+static int raise_consumed;
+
 // track the state of grave surround
 // 0 - not activated
 // 1 - started (cursor placed between ``)
@@ -193,26 +199,64 @@ bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-
 bool process_raise_specials(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == RAISE)
+    if (keycode != RAISE)
     {
-        if (record->event.pressed)
+        if (raise_consumed == 0)
+            raise_consumed = 1;
+        return true;
+    }
+
+    if (record->event.pressed)
+    {
+        if (get_mods() & MOD_BIT(KC_LCTL) || (last_key_code == RAISE && timer_elapsed(last_key_time) < 300))
         {
+            uint8_t mod_state = get_mods();
+            clear_mods();
+
+            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+            raise_consumed = 2;
+
+            set_mods(mod_state);
+        }
+        else
+        {
+            raise_consumed = 0;
             layer_on(_RAISE);
             if (IS_GAME)
                 register_code(KC_SPC);
             else
                 register_code(KC_LGUI);
         }
-        else
-        {
-            layer_off(_RAISE);
-            unregister_code(KC_SPC);
-            unregister_code(KC_LGUI);
-        }
+    }
+    else
+    {
+        layer_off(_RAISE);
+        unregister_code(KC_SPC);
+        unregister_code(KC_LGUI);
 
-        return false;
+        switch (raise_consumed)
+        {
+            case 0:
+                if (timer_elapsed(last_key_time) > 250)
+                    break;
+
+                if (get_mods() & MOD_BIT(KC_LCTL))
+                {
+                    uint8_t mod_state = get_mods();
+                    clear_mods();
+
+                    SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+                    raise_consumed = 2;
+
+                    set_mods(mod_state);
+                }
+                else
+                {
+                    tap_code16(KC_BSPC);
+                }
+                break;
+        }
     }
 
     return true;
