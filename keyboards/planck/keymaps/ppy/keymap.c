@@ -594,7 +594,45 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             else
                 semicolon_nav_activated = 2;
             break;
+    }
 
+    return true;
+}
+
+// track the state of KC_RSFT
+// 0 - not activated
+// 1 - down, not consumed
+// 2 - down, consumed
+static int rsft_state;
+
+bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == KC_RSFT)
+    {
+        if (record->event.pressed)
+        {
+            if (get_mods() & MOD_BIT(KC_LSFT) || (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
+            {
+                tap_code16(KC_MINS);
+                rsft_state = 2;
+                return false;
+            }
+
+            rsft_state = 1;
+            // block this because it handles weird on iOS (right shift release also releases left shift MAKING_this-happen)
+            return false;
+        }
+        else
+        {
+            if (rsft_state == 1)
+                tap_code16(KC_MINS);
+
+            rsft_state = 0;
+        }
+    }
+    else if (record->event.pressed && rsft_state == 1)
+    {
+        register_code(KC_RSFT);
+        rsft_state = 2;
     }
 
     return true;
