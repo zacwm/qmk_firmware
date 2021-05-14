@@ -21,9 +21,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
-            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_MINS, KC_LBRC, KC_RBRC, KC_SCLN, _______,
-            _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, _______, KC_BSLS, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, KC_UNDS, _______, _______, _______),
+            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_LBRC, KC_RBRC, KC_LCBR, KC_RCBR, _______,
+            _______, KC_EXLM, KC_AT,   DEV_OR,  DEV_AND, KC_LT,   KC_GT,   KC_UNDS, _______, _______, KC_BSLS, KC_MINS,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     // this is mainly here just to use layer_state_set_user
     // raise layer is actually a LGUI key, so any keys here would currently be prefixed with LGUI.
@@ -681,6 +681,12 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
         return true;
 
     switch (keycode) {
+        case DEV_OR:
+            SEND_STRING(" || ");
+            return false;
+        case DEV_AND:
+            SEND_STRING(" && ");
+            return false;
         case COPY:
             SEND_STRING(SS_LGUI("lc"));
             tap_code16(KC_ESC);

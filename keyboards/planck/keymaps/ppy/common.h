@@ -26,6 +26,8 @@ enum planck_keycodes {
     MEH,
     LOCK,
     GRV_ESC,
+    DEV_AND,
+    DEV_OR,
 };
 
 #define FKEYS MO(_FKEYS)
