@@ -22,7 +22,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_LCBR, KC_LBRC, KC_RBRC, KC_RCBR, _______,
-            _______, KC_EXLM, KC_AT,   DEV_OR,  DEV_AND, KC_LT,   KC_GT,   KC_UNDS, _______, _______, KC_BSLS, KC_MINS,
+            _______, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_LT,   KC_GT,   KC_UNDS, _______, _______, KC_BSLS, KC_MINS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_MEH] = LAYOUT_planck_grid(
