@@ -25,7 +25,6 @@ enum planck_keycodes {
     MEH,
     RMEH,
     LOCK,
-    GRV_ESC,
     DEV_AND,
     DEV_OR,
 };
