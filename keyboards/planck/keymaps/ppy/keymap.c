@@ -17,7 +17,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_BSPC, LOWER,   KC_SPC,  KC_ENT,  GRV_ESC, KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   LOWER,   KC_SPC,  KC_ENT,  GRV_ESC, KVM_SWT, COPY,    RMEH),
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
@@ -337,6 +337,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
 bool process_meh(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case MEH:
+        case RMEH:
             if (record->event.pressed) {
                 meh_activated = 1;
                 layer_on(_MEH);
@@ -348,15 +349,18 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LALT);
                 layer_off(_MEH);
 
-                // MEH key acts like copy if MEH is not used in a combo.
-                // this is a pretty non-destructive action even if accidentally triggered.
-                if (meh_activated < 2)
-                    SEND_STRING(SS_LGUI("c"));
+                if (meh_activated < 2 && timer_elapsed(last_key_time) < 250)
+                {
+                    if (keycode == RMEH)
+                        SEND_STRING(SS_LGUI("v"));
+                    else
+                        SEND_STRING(SS_LGUI("c"));
+                }
 
                 meh_activated = 0;
             }
 
-            break;
+            return false;
         default:
             if (record->event.pressed && meh_activated == 1)
             {

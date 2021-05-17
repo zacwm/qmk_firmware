@@ -22,6 +22,7 @@ enum planck_keycodes {
     LOWER,
     GAME,
     MEH,
+    RMEH,
     LOCK,
     GRV_ESC,
     DEV_AND,
