@@ -755,7 +755,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_BSPC:
-            if (get_mods() & MOD_BIT(KC_LCTL) || (last_key_code == KC_BSPC && timer_elapsed(last_key_time) < 500))
+            if (get_mods() & MOD_BIT(KC_LCTL))
             {
                 uint8_t mod_state = get_mods();
                 clear_mods();
