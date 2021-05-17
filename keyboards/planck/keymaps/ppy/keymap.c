@@ -607,7 +607,7 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
         }
         else
         {
-            if (rsft_state == 1)
+            if (rsft_state == 1  && (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
                 tap_code16(KC_MINS);
 
             rsft_state = 0;
