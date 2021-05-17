@@ -273,17 +273,30 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            lower_consumed = 0;
-            layer_on(_LOWER);
+            if (last_key_code == LOWER && timer_elapsed(last_key_time) < 250)
+            {
+                SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+                lower_consumed = 2;
+            }
+            else
+            {
+                lower_consumed = 0;
+                layer_on(_LOWER);
+            }
         }
         else
         {
+            layer_off(_LOWER);
+
             if (lower_consumed == 3)
                 unregister_code(KC_LSFT);
-            layer_off(_LOWER);
+            else if (lower_consumed == 0 && timer_elapsed(last_key_time) < 250)
+            {
+                SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+            }
         }
 
-        return false;
+        return true;
     }
 
     if (!IS_LAYER_ON(_LOWER))
