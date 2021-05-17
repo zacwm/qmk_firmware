@@ -3,6 +3,7 @@
 enum planck_layers {
     _QWERTY,
     _LOWER,
+    _RAISE,
     _MEH,
     _GAME,
     _FKEYS,
@@ -30,6 +31,7 @@ enum planck_keycodes {
 };
 
 #define FKEYS MO(_FKEYS)
+#define RAISE MO(_RAISE)
 
 #define WORD_L LALT(KC_LEFT)
 #define WORD_R LALT(KC_RIGHT)
