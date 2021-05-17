@@ -497,10 +497,13 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 switch (semicolon_nav_activated)
                 {
                     case 1:
-                        // clears a potential ctrl modifier from CTRL_ESC.
-                        // sequence of events is SCLN down - wait 500ms - CTRL_ESC down - SCLN up - CTRL_ESC up
-                        clear_mods();
-                        tap_code16(KC_SCLN);
+                        if (timer_elapsed(last_key_time) < 250)
+                        {
+                            // clears a potential ctrl modifier from CTRL_ESC.
+                            // sequence of events is SCLN down - wait 500ms - CTRL_ESC down - SCLN up - CTRL_ESC up
+                            clear_mods();
+                            tap_code16(KC_SCLN);
+                        }
                         break;
                     case 2:
                         unregister_code16(KC_SCLN);
@@ -517,6 +520,13 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                 layer_off(_NAV);
                 return false;
             }
+    }
+
+
+    if (!record->event.pressed)
+        return true;
+
+    switch (keycode) {
         case KC_UP:
         case KC_DOWN:
         case KC_PGUP:
@@ -527,19 +537,16 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case LINE_R:
         case TAB_L:
         case TAB_R:
-            if (semicolon_nav_activated == 1)
-            {
-                semicolon_nav_activated = 2;
-                return true;
-            }
+            unregister_code16(KC_LGUI);
+            semicolon_nav_activated = 2;
+            break;
         case CTRL_ESC:
             // note that last_key_time will not be updated from the SCLN_NAV keypress itself.
             // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
-            {
                 tap_code16(KC_SCLN);
-                semicolon_nav_activated = 2;
-            }
+
+            semicolon_nav_activated = 2;
             break;
         default:
             if (semicolon_nav_activated == 1)
@@ -550,33 +557,41 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_LEFT:
-            if (!record->event.pressed || semicolon_nav_activated == 0)
-                break;
-
-            if (get_mods() & MOD_BIT(KC_LCTL))
+            switch (semicolon_nav_activated)
             {
-                register_code16(KC_LSFT);
-                tap_code16(KC_TAB);
-                semicolon_nav_activated = 3;
-                return false;
+                case 1:
+                case 2:
+                case 3:
+                    if (get_mods() & MOD_BIT(KC_LCTL))
+                    {
+                        register_code16(KC_LSFT);
+                        tap_code16(KC_TAB);
+                        semicolon_nav_activated = 3;
+                        return false;
+                    }
+                    else
+                        semicolon_nav_activated = 2;
+                    break;
             }
-            else
-                semicolon_nav_activated = 2;
-            break;
 
         case KC_RGHT:
-            if (!record->event.pressed || semicolon_nav_activated == 0)
-                break;
-
-            if (get_mods() & MOD_BIT(KC_LCTL))
+            switch (semicolon_nav_activated)
             {
-                unregister_code16(KC_LSFT);
-                tap_code16(KC_TAB);
-                semicolon_nav_activated = 3;
-                return false;
+                case 1:
+                case 2:
+                case 3:
+                    if (get_mods() & MOD_BIT(KC_LCTL))
+                    {
+                        unregister_code16(KC_LSFT);
+                        tap_code16(KC_TAB);
+                        semicolon_nav_activated = 3;
+                        return false;
+                    }
+                    else
+                        semicolon_nav_activated = 2;
+                    break;
             }
-            else
-                semicolon_nav_activated = 2;
+
             break;
     }
 
