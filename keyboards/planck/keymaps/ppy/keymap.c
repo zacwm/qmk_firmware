@@ -558,7 +558,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             semicolon_nav_activated = 2;
             break;
         case CTRL_ESC:
-            // note that last_key_time will not be updated from the SCLN_NAV keypress itself.
             // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
                 tap_code16(KC_SCLN);
