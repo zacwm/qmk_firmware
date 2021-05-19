@@ -17,11 +17,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, KC_LGUI, RAISE,   LOWER,   KC_SPC,  KC_ENT,  KC_MINS, KVM_SWT, COPY,    RMEH),
+            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  KC_LGUI, KVM_SWT, COPY,    RMEH),
 
     [_LOWER] = LAYOUT_planck_grid(
-            KC_GRV,  KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC, KC_CIRC, KC_AMPR, KC_ASTR, DEV_AND, KC_0,    _______,
-            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_LCBR, KC_LBRC, KC_RBRC, KC_RCBR, KC_SCLN, KC_DQUO,
+            KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______, 
+            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_LCBR, KC_LBRC, KC_RBRC, KC_RCBR, KC_DQUO,
             _______, KC_EXLM, KC_AT,   KC_HASH, S(KC_V), KC_LT,   KC_GT,   KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_MINS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
@@ -496,7 +496,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 // timer case here is just to give more immediacy to semicolons when typing at EOL.
                 // set low enough to not impede intended navigation
-                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 250)
+                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 150)
                 {
                     register_code16(KC_SCLN);
                     semicolon_nav_activated = 2;
@@ -739,10 +739,10 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case DEV_OR:
             SEND_STRING(" || ");
-            return false;
+            return true;
         case DEV_AND:
             SEND_STRING(" && ");
-            return false;
+            return true;
         case COPY:
             SEND_STRING(SS_LGUI("lc"));
             tap_code16(KC_ESC);
@@ -856,7 +856,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 layer_state_t layer_state_set_user(layer_state_t state) {
     state = update_tri_layer_state(state, _LOWER, _MEH, _ADJUST);
-    state = update_tri_layer_state(state, _LOWER, _RAISE, _FKEYS);
 
     return state;
 }
