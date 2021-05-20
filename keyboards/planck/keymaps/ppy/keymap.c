@@ -496,15 +496,17 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 // timer case here is just to give more immediacy to semicolons when typing at EOL.
                 // set low enough to not impede intended navigation
-                if (get_mods() & MOD_BIT(KC_LSFT) || timer_elapsed(last_key_time) < 150)
+                if (get_mods() & MOD_BIT(KC_LSFT) || (get_mods() == 0 && timer_elapsed(last_key_time) < 150))
                 {
                     register_code16(KC_SCLN);
                     semicolon_nav_activated = 2;
                     return true;
                 }
-
-                semicolon_nav_activated = 1;
-                layer_on(_NAV);
+                else
+                {
+                    semicolon_nav_activated = 1;
+                    layer_on(_NAV);
+                }
                 return false;
             }
             else
