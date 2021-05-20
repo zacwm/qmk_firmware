@@ -25,14 +25,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, KC_EXLM, KC_AT,   KC_HASH, S(KC_V), KC_LT,   KC_GT,   KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_UNDS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
-    // this is mainly here just to use layer_state_set_user
-    // raise layer is actually a LGUI key, so any keys here would currently be prefixed with LGUI.
-    [_RAISE] = LAYOUT_planck_grid(
-            _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_PERC, _______, KC_7,    KC_8,    KC_9,    KC_PERC, _______,
-            KC_LCTL, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, KC_LBRC, KC_4,    KC_5,    KC_6,    KC_RBRC, _______,
-            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_LT,   KC_GT,   KC_1,    KC_2,    KC_3,    KC_COMM, KC_MINS,
-            _______, _______, _______, _______, _______, _______, _______, KC_0,    KC_DOT,  _______, _______, _______),
-
     [_MEH] = LAYOUT_planck_grid(
             _______, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
