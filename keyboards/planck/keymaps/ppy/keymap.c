@@ -345,7 +345,6 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
             switch (keycode) {
                 case KC_SPC:
                     unregister_code(KC_LSFT);
-                    lower_consumed = 0;
                     return true;
             }
         }
