@@ -224,9 +224,8 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 tap_code16(KC_LEFT);
                 grave_surround_state = 1;
 
-                register_code(KC_LSFT);
-                register_code(KC_RSFT);
-                return true;
+                register_code(keycode == KC_LSFT ? KC_RSFT : KC_LSFT);
+                return false;
             }
 
             break;
