@@ -85,7 +85,6 @@ static int meh_activated;
 // 1 - pressed (waiting to decide on semicolon or nav)
 // 2 - consumed (upgraded to semicolon or used in nav layer)
 // 3 - consumed (as ctrl-tab rotation)
-// 4 - consumed (as cmd)
 static int semicolon_nav_activated;
 
 // keep track of the current kvm target (to play a different sound on switch).
@@ -368,14 +367,6 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LALT);
                 layer_off(_MEH);
 
-                if (meh_activated < 2 && timer_elapsed(last_key_time) < 250)
-                {
-                    if (keycode == RMEH)
-                        SEND_STRING(SS_LGUI("v"));
-                    else
-                        SEND_STRING(SS_LGUI("c"));
-                }
-
                 meh_activated = 0;
             }
 
@@ -519,9 +510,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                     case 3:
                         unregister_code16(KC_LSFT);
                         break;
-                    case 4:
-                        unregister_code16(KC_LGUI);
-                        break;
                 }
 
                 semicolon_nav_activated = 0;
@@ -545,24 +533,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case LINE_R:
         case TAB_L:
         case TAB_R:
-            unregister_code16(KC_LGUI);
             semicolon_nav_activated = 2;
             break;
-        case CTRL_ESC:
-            // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
-            if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
-                tap_code16(KC_SCLN);
-
-            semicolon_nav_activated = 2;
-            break;
-        default:
-            if (semicolon_nav_activated == 1)
-            {
-                register_code16(KC_LGUI);
-                semicolon_nav_activated = 4;
-            }
-            break;
-
         case KC_LEFT:
             switch (semicolon_nav_activated)
             {
@@ -599,6 +571,13 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                     break;
             }
 
+            break;
+        default:
+            // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
+            if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
+                tap_code16(KC_SCLN);
+
+            semicolon_nav_activated = 2;
             break;
     }
 
