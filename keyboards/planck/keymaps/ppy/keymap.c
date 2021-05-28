@@ -321,9 +321,9 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
                     return true;
 
                 case KC_SPC:
-                    register_code(KC_LSFT);
+                    register_code(KC_PGUP);
                     lower_consumed = 3;
-                    return true;
+                    return false;
                 // dead use case.
                 case KC_BSPC:
                     SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
@@ -342,7 +342,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
         {
             switch (keycode) {
                 case KC_SPC:
-                    unregister_code(KC_LSFT);
+                    unregister_code(KC_PGUP);
                     return true;
             }
         }
