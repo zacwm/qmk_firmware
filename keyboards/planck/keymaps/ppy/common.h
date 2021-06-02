@@ -33,8 +33,10 @@ enum planck_keycodes {
 #define WORD_L LALT(KC_LEFT)
 #define WORD_R LALT(KC_RIGHT)
 
-#define LINE_L LCTL(KC_LEFT)
-#define LINE_R LCTL(KC_RIGHT)
+#define LINE_L LGUI(KC_LEFT)
+#define LINE_R LGUI(KC_RIGHT)
+
+#define DEL_WORD LALT(KC_BSPC)
 
 #define TAB_L LCTL(LSFT(KC_TAB))
 #define TAB_R LCTL(KC_TAB)
