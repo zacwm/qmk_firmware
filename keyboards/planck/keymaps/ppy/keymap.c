@@ -278,7 +278,7 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            if (last_key_code == LOWER && timer_elapsed(last_key_time) < 250)
+            if (last_key_code == LOWER && timer_elapsed(last_key_time) < 1000)
             {
                 SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
                 lower_consumed = 2;
