@@ -107,6 +107,8 @@ static int lower_consumed;
 // 2 - consumed (success or revert)
 static int grave_surround_state;
 
+static bool last_was_number;
+
 void set_game_mode(bool state, bool update_target_state)
 {
     if (state)
@@ -780,6 +782,29 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed)
+    {
+        switch (keycode) {
+            case KC_1:
+            case KC_2:
+            case KC_3:
+            case KC_4:
+            case KC_5:
+            case KC_6:
+            case KC_7:
+            case KC_8:
+            case KC_9:
+            case KC_0:
+                last_was_number = true;
+                break;
+            default:
+                last_was_number = false;
+                break;
+        }
+    }
+}
+
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!process_macros(keycode, record)) return false;
 
@@ -825,6 +850,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
     }
 
+    update_last_was_number(keycode, record);
     return retval;
 }
 
