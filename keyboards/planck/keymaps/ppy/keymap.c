@@ -21,8 +21,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_LOWER] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______, 
-            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_LT,   KC_GT,   KC_MINS, KC_LBRC, KC_RBRC, KC_SCLN, _______, 
-            _______, KC_EXLM, KC_AT,   KC_HASH, S(KC_V), DEV_OR,  DEV_AND, KC_UNDS, _______, _______, KC_BSLS, KC_UNDS,
+            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_PERC, KC_MINS, KC_MINS, KC_LCBR, KC_RCBR, KC_SCLN, _______, 
+            _______, KC_EXLM, KC_AT,   KC_HASH, S(KC_V), KC_LT,   KC_GT,   KC_UNDS, KC_LBRC, KC_RBRC, KC_BSLS, KC_MINS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_MEH] = LAYOUT_planck_grid(
@@ -44,10 +44,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, KC_BTN1, KC_BTN2, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
-            _______, _______, _______, WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
-            _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
-            _______, _______, _______, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
+            _______, G(KC_Q), G(KC_W), WORD_R,  G(KC_R), G(KC_T), _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
+            _______, G(KC_A), G(KC_S), KC_PGDN, G(KC_F), _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
+            _______, G(KC_Z), G(KC_X), G(KC_C), G(KC_V), WORD_L,  G(KC_N), G(KC_M), _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, G(KC_SPC),_______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
@@ -571,11 +571,14 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             }
 
             break;
-        default:
+        case CTRL_ESC:
             // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
                 tap_code16(KC_SCLN);
 
+            semicolon_nav_activated = 2;
+            break;
+        default:
             semicolon_nav_activated = 2;
             break;
     }
