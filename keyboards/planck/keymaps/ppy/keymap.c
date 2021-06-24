@@ -17,12 +17,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_LGUI, LOWER,   KC_SPC,  KC_ENT,  FKEYS,   KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   LOWER,   KC_SPC,  KC_ENT,  FKEYS,   KVM_SWT, COPY,    PASTE),
 
     [_LOWER] = LAYOUT_planck_grid(
-            KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______, 
-            KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_PERC, KC_MINS, KC_MINS, KC_LCBR, KC_RCBR, KC_SCLN, _______, 
-            _______, KC_EXLM, KC_AT,   KC_HASH, S(KC_V), KC_LT,   KC_GT,   KC_UNDS, KC_LBRC, KC_RBRC, KC_BSLS, KC_MINS,
+            KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
+            KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_LT,   KC_GT,   KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_DQUO,
+            _______, KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PERC, KC_CIRC, KC_UNDS, KC_AMPR, KC_LBRC, KC_RBRC, KC_BSLS,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_MEH] = LAYOUT_planck_grid(
@@ -44,10 +44,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, KC_BTN1, KC_BTN2, _______, _______, _______),
 
     [_NAV] = LAYOUT_planck_grid(
-            _______, G(KC_Q), G(KC_W), WORD_R,  G(KC_R), G(KC_T), _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
-            _______, G(KC_A), G(KC_S), KC_PGDN, G(KC_F), _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
-            _______, G(KC_Z), G(KC_X), G(KC_C), G(KC_V), WORD_L,  G(KC_N), G(KC_M), _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, G(KC_SPC),_______, _______, _______, _______, _______),
+            _______, _______, _______, WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
+            _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
+            _______, _______, _______, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
@@ -85,6 +85,7 @@ static int meh_activated;
 // 1 - pressed (waiting to decide on semicolon or nav)
 // 2 - consumed (upgraded to semicolon or used in nav layer)
 // 3 - consumed (as ctrl-tab rotation)
+// 4 - consumed (as cmd)
 static int semicolon_nav_activated;
 
 // keep track of the current kvm target (to play a different sound on switch).
@@ -334,6 +335,18 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
             }
         }
 
+        /* if (last_was_number) */
+        /* { */
+        /*     switch (keycode) { */
+        /*         case KC_LBRC: */
+        /*             tap_code16(KC_COMM); */
+        /*             return false; */
+        /*         case KC_RBRC: */
+        /*             tap_code16(KC_DOT); */
+        /*             return false; */
+        /*     } */
+        /* } */
+
         // only upgrade from initial state. 2 is capturing
         if (lower_consumed == 0)
             lower_consumed = 1;
@@ -372,6 +385,15 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
             }
 
             return false;
+        case KC_TAB:
+            if (record->event.pressed && meh_activated == 1)
+            {
+                SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
+                SEND_STRING(SS_TAP(X_UP));
+                return false;
+            }
+            break;
+
         default:
             if (record->event.pressed && meh_activated == 1)
             {
@@ -473,6 +495,22 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+void unregister_nav_scln_down_state(void) {
+    unregister_code16(KC_SCLN);
+
+    switch (semicolon_nav_activated)
+    {
+        case 3:
+            unregister_code16(KC_LSFT);
+            break;
+        case 4:
+            unregister_code16(KC_LGUI);
+            break;
+    }
+
+    semicolon_nav_activated = 0;
+}
+
 bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case NAV_SCLN:
@@ -505,14 +543,9 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
                             tap_code16(KC_SCLN);
                         }
                         break;
-                    case 2:
-                        unregister_code16(KC_SCLN);
-                        break;
-                    case 3:
-                        unregister_code16(KC_LSFT);
-                        break;
                 }
 
+                unregister_nav_scln_down_state();
                 semicolon_nav_activated = 0;
                 layer_off(_NAV);
                 return false;
@@ -520,7 +553,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     }
 
 
-    if (!record->event.pressed)
+    if (!record->event.pressed || semicolon_nav_activated < 1)
         return true;
 
     switch (keycode) {
@@ -534,54 +567,57 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case LINE_R:
         case TAB_L:
         case TAB_R:
+            unregister_nav_scln_down_state();
             semicolon_nav_activated = 2;
             break;
         case KC_LEFT:
-            switch (semicolon_nav_activated)
-            {
-                case 1:
-                case 2:
-                case 3:
-                    if (get_mods() & MOD_BIT(KC_LCTL))
-                    {
-                        register_code16(KC_LSFT);
-                        tap_code16(KC_TAB);
-                        semicolon_nav_activated = 3;
-                        return false;
-                    }
-                    else
-                        semicolon_nav_activated = 2;
-                    break;
-            }
-
         case KC_RGHT:
-            switch (semicolon_nav_activated)
+            if (get_mods() & MOD_BIT(KC_LCTL))
             {
-                case 1:
-                case 2:
-                case 3:
-                    if (get_mods() & MOD_BIT(KC_LCTL))
-                    {
-                        unregister_code16(KC_LSFT);
-                        tap_code16(KC_TAB);
-                        semicolon_nav_activated = 3;
-                        return false;
-                    }
-                    else
-                        semicolon_nav_activated = 2;
-                    break;
+                if (semicolon_nav_activated != 3)
+                    unregister_nav_scln_down_state();
+
+                if (keycode == KC_LEFT)
+                    register_code16(KC_LSFT);
+                else
+                    unregister_code16(KC_LSFT);
+
+                tap_code16(KC_TAB);
+                semicolon_nav_activated = 3;
+                return false;
             }
-
+            else
+            {
+                unregister_nav_scln_down_state();
+                semicolon_nav_activated = 2;
+            }
             break;
-        case CTRL_ESC:
-            // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
-            if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 250)
-                tap_code16(KC_SCLN);
 
-            semicolon_nav_activated = 2;
-            break;
+        case KC_LGUI:
+        case KC_LSFT:
+            return true;
+
         default:
-            semicolon_nav_activated = 2;
+            if (semicolon_nav_activated == 1)
+            {
+                switch (keycode)
+                {
+                    case CTRL_ESC:
+                    case KC_SPC:
+                        // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
+                        if (timer_elapsed(last_key_time) < 250)
+                        {
+                            tap_code16(KC_SCLN);
+                            semicolon_nav_activated = 2;
+                            return true;
+                        }
+
+                        break;
+                }
+
+                register_code16(KC_LGUI);
+                semicolon_nav_activated = 4;
+            }
             break;
     }
 
@@ -649,6 +685,9 @@ void exit_shifted_underscoring(void) {
 }
 
 bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
+    // disabled for now.
+    return true;
+
     switch (keycode) {
         case KC_LSFT:
             if (timer_elapsed(shift_timer) < 250)
@@ -667,7 +706,7 @@ bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
                         case 3:
                             PLAY_SONG(song_shift_3);
                             SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
-                            SEND_STRING(SS_TAP(X_LEFT) SS_TAP(X_LEFT) SS_TAP(X_LEFT) SS_TAP(X_LEFT));
+                            SEND_STRING(SS_TAP(X_UP));
                             exit_shifted_underscoring();
                             break;
                     }
