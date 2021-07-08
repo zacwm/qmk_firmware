@@ -461,7 +461,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_ESC);
                 unregister_code(KC_LCTL);
 
-                if (ctrl_escape_activated == 2)
+                if (timer_elapsed(last_key_time) < 250 && ctrl_escape_activated == 2)
                 {
                     tap_code16(KC_ESC);
                 }
