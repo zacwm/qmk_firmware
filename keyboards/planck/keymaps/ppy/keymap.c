@@ -570,7 +570,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case TAB_R:
             unregister_nav_scln_down_state();
             semicolon_nav_activated = 2;
-            break;
+            return true;
+
         case KC_LEFT:
         case KC_RGHT:
             if (get_mods() & MOD_BIT(KC_LCTL))
@@ -591,35 +592,40 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             {
                 unregister_nav_scln_down_state();
                 semicolon_nav_activated = 2;
+                return true;
             }
-            break;
 
         case KC_LGUI:
         case KC_LSFT:
             return true;
 
-        default:
+        case KC_ENT:
+        case KC_SPC:
+            // enter only cmd enters if the first thing.
+            // this is to allow things like selecting options from lists (using up/down).
+            if (semicolon_nav_activated > 1)
+                return true;
+
+            break;
+
+        case CTRL_ESC:
+            // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
             if (semicolon_nav_activated == 1)
             {
-                switch (keycode)
-                {
-                    case CTRL_ESC:
-                    case KC_SPC:
-                        // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
-                        if (timer_elapsed(last_key_time) < 250)
-                        {
-                            tap_code16(KC_SCLN);
-                            semicolon_nav_activated = 2;
-                            return true;
-                        }
-
-                        break;
-                }
-
-                register_code16(KC_LGUI);
-                semicolon_nav_activated = 4;
+                tap_code16(KC_SCLN);
+                semicolon_nav_activated = 2;
+                return true;
             }
+
             break;
+    }
+
+    if (semicolon_nav_activated != 4 && semicolon_nav_activated != 2)
+    {
+        unregister_nav_scln_down_state();
+
+        register_code16(KC_LGUI);
+        semicolon_nav_activated = 4;
     }
 
     return true;
@@ -878,7 +884,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     // in the case of CTRL_ESC, don't update on pressed to allow for CTRL_ESC+SLCN_NAV combo.
     // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
-    if (record->event.pressed != (keycode == CTRL_ESC))
+    if (record->event.pressed)
     {
         switch (keycode)
         {
