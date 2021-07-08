@@ -244,8 +244,9 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 case KC_ESC:
                 case KC_COMM:
                 case CTRL_ESC:
-                    // exit via various commit keys
-                    grave_commit();
+                    if (get_mods() == 0)
+                        // exit via various commit keys
+                        grave_commit();
                     break;
 
                 case KC_BSPC:
