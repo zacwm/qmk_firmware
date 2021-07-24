@@ -777,12 +777,6 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
         return true;
 
     switch (keycode) {
-        case DEV_OR:
-            SEND_STRING(" || ");
-            return true;
-        case DEV_AND:
-            SEND_STRING(" && ");
-            return true;
         case COPY:
             SEND_STRING(SS_LGUI("lc"));
             tap_code16(KC_ESC);
