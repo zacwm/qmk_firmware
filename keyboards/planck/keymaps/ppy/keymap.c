@@ -895,18 +895,19 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!process_nav_scln(keycode, record)) return false;
 
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
-    if (IS_GAME) return true;
+    if (!(IS_GAME))
+    {
+        // must be processed before grave to allow underscoring inside surround.
+        if (!process_shifted_underscoring(keycode, record)) return false;
 
-    // must be processed before grave to allow underscoring inside surround.
-    if (!process_shifted_underscoring(keycode, record)) return false;
+        if (!process_right_shift(keycode, record)) return false;
 
-    if (!process_right_shift(keycode, record)) return false;
+        if (!process_grave_surround(keycode, record)) return false;
 
-    if (!process_grave_surround(keycode, record)) return false;
+        if (!process_record_vimlayer(keycode, record)) return false;
 
-    if (!process_record_vimlayer(keycode, record)) return false;
-
-    if (!process_ctrl_esc(keycode, record)) return false;
+        if (!process_ctrl_esc(keycode, record)) return false;
+    }
 
     if (!process_meh(keycode, record)) return false;
 
