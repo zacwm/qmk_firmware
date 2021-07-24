@@ -302,16 +302,8 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            if ((last_key_code == FKEYS || last_key_code == LOWER) && timer_elapsed(last_key_time) < 300)
-            {
-                SEND_STRING(SS_TAP(X_BSPC));
-                lower_consumed = 2;
-            }
-            else
-            {
-                lower_consumed = 0;
-                layer_on(_LOWER);
-            }
+            lower_consumed = 0;
+            layer_on(_LOWER);
         }
         else
         {
@@ -319,10 +311,6 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
 
             if (lower_consumed == 3)
                 unregister_code(KC_LSFT);
-            else if (lower_consumed == 0 && timer_elapsed(last_key_time) < 300)
-            {
-                SEND_STRING(SS_TAP(X_BSPC));
-            }
         }
 
         return true;
