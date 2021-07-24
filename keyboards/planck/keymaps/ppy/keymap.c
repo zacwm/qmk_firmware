@@ -389,6 +389,9 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LALT);
                 layer_off(_MEH);
 
+                if (meh_activated == 1)
+                    SEND_STRING(SS_LGUI(SS_TAP(X_C)));
+
                 meh_activated = 0;
             }
 
