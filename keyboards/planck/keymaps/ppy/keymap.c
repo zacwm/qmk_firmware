@@ -582,7 +582,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
 
         case KC_LEFT:
         case KC_RGHT:
-            if (get_mods() & MOD_BIT(KC_LCTL))
+            if (get_mods() & MOD_BIT(KC_LCTL) || get_mods() & MOD_BIT(KC_LGUI))
             {
                 if (semicolon_nav_activated != 3)
                     unregister_nav_scln_down_state();
