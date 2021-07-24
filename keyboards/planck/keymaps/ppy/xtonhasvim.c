@@ -16,6 +16,8 @@
 #include "xtonhasvim.h"
 #include "common.h"
 
+uint8_t vim_cmd_layer(void) { return _VIM; }
+
 uint16_t vstate = VIM_START;
 static bool yank_was_lines = false;
 static bool SHIFTED = false;

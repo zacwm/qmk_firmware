@@ -2,16 +2,6 @@
 #include "xtonhasvim.h"
 #include "common.h"
 
-float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
-
-float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5));
-float song_kvm_1[][2] = SONG(S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5));
-
-float song_game_0[][2] = SONG(S__NOTE(_G4));
-float song_game_1[][2] = SONG(S__NOTE(_C6),S__NOTE(_C6));
-
-uint8_t vim_cmd_layer(void) { return _VIM; }
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT_planck_grid(
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
@@ -109,6 +99,15 @@ static int lower_consumed;
 static int grave_surround_state;
 
 static bool last_was_number;
+
+// sounds
+float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
+
+float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5));
+float song_kvm_1[][2] = SONG(S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5));
+
+float song_game_0[][2] = SONG(S__NOTE(_G4));
+float song_game_1[][2] = SONG(S__NOTE(_C6),S__NOTE(_C6));
 
 void set_game_mode(bool state, bool update_target_state)
 {
