@@ -894,6 +894,7 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_nav_scln(keycode, record)) return false;
 
+    // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (IS_GAME) return true;
 
     // must be processed before grave to allow underscoring inside surround.
@@ -916,13 +917,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     bool retval = process_all_custom(keycode, record);
 
-    // in the case of CTRL_ESC, don't update on pressed to allow for CTRL_ESC+SLCN_NAV combo.
-    // updating on the release pass allows for double tap on CTRL_ESC to get an ESC hold.
     if (record->event.pressed)
     {
         switch (keycode)
         {
-            // TODO: add back any exceptions to the rule here
             default:
                 last_key_time = timer_read();
                 last_key_code = keycode;
