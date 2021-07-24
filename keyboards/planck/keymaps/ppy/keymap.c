@@ -115,11 +115,11 @@ static bool last_was_number;
 // sounds
 float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
 
-float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5),S__NOTE(_C5));
-float song_kvm_1[][2] = SONG(S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5),S__NOTE(_G5));
+float song_kvm_0[][2] = SONG(S__NOTE(_C5),S__NOTE(_E5));
+float song_kvm_1[][2] = SONG(S__NOTE(_E5),S__NOTE(_C5));
 
-float song_game_0[][2] = SONG(S__NOTE(_G4));
-float song_game_1[][2] = SONG(S__NOTE(_C6),S__NOTE(_C6));
+float song_game_0[][2] = SONG(S__NOTE(_C6),S__NOTE(_C5));
+float song_game_1[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6));
 
 void set_game_mode(bool state, bool update_target_state)
 {
