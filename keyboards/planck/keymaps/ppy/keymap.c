@@ -7,50 +7,62 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,   KC_SPC,  KC_ENT,  KC_RGUI, KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  KC_ENT,  KC_RGUI, KVM_SWT, COPY,    PASTE),
 
+    // Every symbol required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_PERC, KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
             _______, KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PIPE, KC_AMPR, KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
-    [_MEH] = LAYOUT_planck_grid(
-            _______, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, VIM_START,_______,_______, _______, CAP_IMG, CAP_MOV),
-
-    [_GAME] = LAYOUT_planck_grid(
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
-            _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, _______, _______, _______, XBX_IMG, XBX_MOV),
-
+    // Function keys, mouse emulation and less commonly used special keys.
     [_FKEYS] = LAYOUT_planck_grid(
             _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, _______, _______, _______, KC_WH_U, KC_DEL,
             KC_LCTL, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, KC_MS_L, KC_MS_D, KC_MS_U, KC_MS_R, KC_WH_D, _______,
             _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, KC_BTN1, KC_BTN2, _______, _______, _______),
 
+    // Loosely vim-based cursor and document navigation keys.
+    // Accessed by holding semicolon.
     [_NAV] = LAYOUT_planck_grid(
             _______, _______, _______, WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
             _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
             _______, _______, _______, _______, _______, WORD_L,  _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    // One-handed gaming layout.
+    // Left hand shifted one key further left than usual for WASD usage.
+    [_GAME] = LAYOUT_planck_grid(
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
+            _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, _______, _______, _______, XBX_IMG, XBX_MOV),
+
+    // Special macros accessible via MEH key (bottom-left corner key).
+    // Undefined keys will get the standard MEH modifiers added.
+    [_MEH] = LAYOUT_planck_grid(
+            _______, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            _______, _______, _______, _______, _______, _______, VIM_START,_______,_______, _______, CAP_IMG, CAP_MOV),
+
+    // Keyboard level commands.
+    // Accessed via MEH+SYMBOL keys.
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
             _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, _______, _______, _______,
             _______, _______, _______, KC_LOCK,VIM_START,_______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    // xtonhasvim compatibility layer. VIM_ prefixes probably not required, along with this layer.
     [_VIM] = LAYOUT_planck_grid(
             _______, _______, VIM_W,   VIM_E,   VIM_R,   _______, VIM_Y,   VIM_U,   VIM_I,   VIM_O,   VIM_P,   _______,
             VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,   VIM_L,   _______, _______,
             VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______, _______, VIM_COMMA,VIM_PERIOD,_______,_______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
+    // xtonhasvim compatibility layer. Probably not required with some refactoring.
     [_VINSERT] = LAYOUT_planck_grid(
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             VIM_ESC, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
