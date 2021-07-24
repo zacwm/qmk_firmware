@@ -275,27 +275,31 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
-    // TODO: move this logic out of this function.
-    if (keycode == FKEYS)
-    {
-        if (record->event.pressed)
-        {
-            if ((last_key_code == FKEYS || last_key_code == SYMBOL) && timer_elapsed(last_key_time) < 1000)
-            {
-                symbol_consumed = 2;
-                SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-            }
-        }
-        else
-        {
-            if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 250)
-                SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+bool process_fkeys(uint16_t keycode, keyrecord_t *record) {
+    if (keycode != FKEYS)
+        return true;
 
-            symbol_consumed = 0;
+    // Pressing the FKEY key without another key will backspace one word (opt-backspace).
+    if (record->event.pressed)
+    {
+        if ((last_key_code == FKEYS || last_key_code == SYMBOL) && timer_elapsed(last_key_time) < 1000)
+        {
+            symbol_consumed = 2;
+            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
         }
     }
+    else
+    {
+        if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 250)
+            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
 
+        symbol_consumed = 0;
+    }
+
+    return true;
+}
+
+bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
     // handle actual layer toggle.
     if (keycode == SYMBOL)
     {
@@ -870,6 +874,8 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!process_macros(keycode, record)) return false;
 
     if (!process_symbol_specials(keycode, record)) return false;
+
+    if (!process_fkeys(keycode, record)) return false;
 
     if (!process_game_specials(keycode, record)) return false;
 
