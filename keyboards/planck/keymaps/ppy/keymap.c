@@ -669,6 +669,49 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+// track the state of KC_LSFT
+// 0 - not activated
+// 1 - down, not consumed
+// 2 - down, consumed
+static int lsft_state;
+
+bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
+    if (last_key_code == KC_RSFT)
+        // this should handle grave escape instead.
+        return true;
+
+    if (keycode == KC_LSFT)
+    {
+        if (record->event.pressed)
+        {
+            if (get_mods() & MOD_BIT(KC_RSFT) || (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
+            {
+                tap_code16(KC_UNDS);
+                lsft_state = 2;
+                return false;
+            }
+
+            lsft_state = 1;
+            // block this because it handles weird on iOS (left shift release also releases right shift MAKING_this-happen)
+            return false;
+        }
+        else
+        {
+            if (lsft_state == 1  && (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
+                tap_code16(KC_UNDS);
+
+            lsft_state = 0;
+        }
+    }
+    else if (record->event.pressed && lsft_state == 1)
+    {
+        register_code(KC_LSFT);
+        lsft_state = 2;
+    }
+
+    return true;
+}
+
 // track the state of KC_RSFT
 // 0 - not activated
 // 1 - down, not consumed
@@ -817,12 +860,10 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
+        if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
-
         if (!process_grave_surround(keycode, record)) return false;
-
         if (!process_record_vimlayer(keycode, record)) return false;
-
         if (!process_ctrl_esc(keycode, record)) return false;
     }
 
