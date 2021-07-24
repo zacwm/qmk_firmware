@@ -141,8 +141,6 @@ void set_game_mode(bool state, bool update_target_state)
     }
 }
 
-int game_mode_tri_key_activate;
-
 bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
 
     if (!record->event.pressed)
@@ -162,35 +160,6 @@ bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
                 if (record->event.pressed)
                     set_game_mode(false, true);
             }
-            break;
-        case KC_A:
-            if (isGameMode)
-                break;
-
-            game_mode_tri_key_activate = 1;
-            break;
-        case KC_S:
-            if (isGameMode || game_mode_tri_key_activate != 1)
-            {
-                game_mode_tri_key_activate = 0;
-                break;
-            }
-
-            if (get_mods() == 0 && last_key_code == KC_A && timer_elapsed(last_key_time) < 200)
-                game_mode_tri_key_activate = 2;
-            else
-                game_mode_tri_key_activate = 0;
-            break;
-        case KC_D:
-            if (isGameMode || game_mode_tri_key_activate != 2)
-            {
-                game_mode_tri_key_activate = 0;
-                break;
-            }
-
-            if (get_mods() == 0 && last_key_code == KC_S && timer_elapsed(last_key_time) < 200)
-                set_game_mode(true, true);
-            game_mode_tri_key_activate = 0;
             break;
     }
 
