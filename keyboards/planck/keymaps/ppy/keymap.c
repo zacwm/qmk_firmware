@@ -208,7 +208,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 grave_surround_state = 1;
 
                 register_code(keycode == KC_LSFT ? KC_RSFT : KC_LSFT);
-                return false;
+                return true;
             }
 
             break;
@@ -824,13 +824,14 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_game_specials(keycode, record)) return false;
 
-    if (!process_nav_scln(keycode, record)) return false;
-
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
         if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
+
+        if (!process_nav_scln(keycode, record)) return false;
+
         if (!process_grave_surround(keycode, record)) return false;
         if (!process_record_vimlayer(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
