@@ -1,7 +1,7 @@
 #include QMK_KEYBOARD_H
 
 enum planck_layers {
-    _QWERTY,
+    _BASE,
     _LOWER,
     _MEH,
     _GAME,
@@ -13,7 +13,7 @@ enum planck_layers {
 };
 
 enum planck_keycodes {
-    QWERTY = VIM_SAFE_RANGE,
+    BASE = VIM_SAFE_RANGE,
     BACKLIT,
     CTRL_ESC,
     NAV_SCLN,
