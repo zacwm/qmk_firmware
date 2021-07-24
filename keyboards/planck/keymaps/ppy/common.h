@@ -2,7 +2,7 @@
 
 enum planck_layers {
     _BASE,
-    _LOWER,
+    _SYMBOL,
     _MEH,
     _GAME,
     _FKEYS,
@@ -19,7 +19,7 @@ enum planck_keycodes {
     NAV_SCLN,
     KVM_SWT,
     COPY,
-    LOWER,
+    SYMBOL,
     GAME,
     MEH,
     RMEH,

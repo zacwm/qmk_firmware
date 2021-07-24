@@ -7,9 +7,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   LOWER,   KC_SPC,  KC_ENT,  KC_RGUI, KVM_SWT, COPY,    PASTE),
+            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,   KC_SPC,  KC_ENT,  KC_RGUI, KVM_SWT, COPY,    PASTE),
 
-    [_LOWER] = LAYOUT_planck_grid(
+    [_SYMBOL] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_PERC, KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
             _______, KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PIPE, KC_AMPR, KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
@@ -86,11 +86,11 @@ static int game_target = -1;
 
 #define IS_GAME kvm_target == game_target
 
-// whether a symbol was typed after lower layer switch
+// whether a symbol was typed after symbol layer switch
 // 0  - not consumed
 // 1  - consumed by standard case
 // 2+ - consumed by special case
-static int lower_consumed;
+static int symbol_consumed;
 
 // track the state of grave surround
 // 0 - not activated
@@ -236,7 +236,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 case KC_LSFT:
                 case KC_RSFT:
                 case KC_LCTL:
-                    // don't consume lower from keys that aren't meaninful.
+                    // don't consume symbol from keys that aren't meaninful.
                     break;
 
                 case KC_SPC:
@@ -275,70 +275,70 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
+bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
     // TODO: move this logic out of this function.
     if (keycode == FKEYS)
     {
         if (record->event.pressed)
         {
-            if ((last_key_code == FKEYS || last_key_code == LOWER) && timer_elapsed(last_key_time) < 1000)
+            if ((last_key_code == FKEYS || last_key_code == SYMBOL) && timer_elapsed(last_key_time) < 1000)
             {
-                lower_consumed = 2;
+                symbol_consumed = 2;
                 SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
             }
         }
         else
         {
-            if (lower_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 250)
+            if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 250)
                 SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
 
-            lower_consumed = 0;
+            symbol_consumed = 0;
         }
     }
 
     // handle actual layer toggle.
-    if (keycode == LOWER)
+    if (keycode == SYMBOL)
     {
         if (record->event.pressed)
         {
-            lower_consumed = 0;
-            layer_on(_LOWER);
+            symbol_consumed = 0;
+            layer_on(_SYMBOL);
         }
         else
         {
-            layer_off(_LOWER);
+            layer_off(_SYMBOL);
 
-            if (lower_consumed == 3)
+            if (symbol_consumed == 3)
                 unregister_code(KC_LSFT);
         }
 
         return true;
     }
 
-    if (!IS_LAYER_ON(_LOWER))
+    if (!IS_LAYER_ON(_SYMBOL))
         return true;
 
     // handle special case keys, where a certain key is pressed immediately following
-    // lower layer. this allows special space/backspace when intention is clear
+    // symbol layer. this allows special space/backspace when intention is clear
     // and we are not attempting to just backspace or punctuate while typing symbols.
     if (record->event.pressed)
     {
-        if (lower_consumed != 1)
+        if (symbol_consumed != 1)
         {
             switch (keycode) {
                 case KC_LSFT:
                 case KC_RSFT:
-                    // don't consume lower from keys that aren't meaninful.
+                    // don't consume symbol from keys that aren't meaninful.
                     return true;
 
                 case KC_SPC:
                     register_code(KC_PGUP);
-                    lower_consumed = 3;
+                    symbol_consumed = 3;
                     return false;
                 // dead use case.
                 case KC_BSPC:
                     SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-                    lower_consumed = 2;
+                    symbol_consumed = 2;
                     return false;
             }
         }
@@ -356,12 +356,12 @@ bool process_lower_specials(uint16_t keycode, keyrecord_t *record) {
         /* } */
 
         // only upgrade from initial state. 2 is capturing
-        if (lower_consumed == 0)
-            lower_consumed = 1;
+        if (symbol_consumed == 0)
+            symbol_consumed = 1;
     }
     else
     {
-        if (lower_consumed != 1)
+        if (symbol_consumed != 1)
         {
             switch (keycode) {
                 case KC_SPC:
@@ -872,7 +872,7 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!process_macros(keycode, record)) return false;
 
-    if (!process_lower_specials(keycode, record)) return false;
+    if (!process_symbol_specials(keycode, record)) return false;
 
     if (!process_game_specials(keycode, record)) return false;
 
@@ -919,7 +919,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    state = update_tri_layer_state(state, _LOWER, _MEH, _ADJUST);
+    state = update_tri_layer_state(state, _SYMBOL, _MEH, _ADJUST);
 
     return state;
 }
