@@ -712,86 +712,6 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-static int shift_state;
-
-static uint16_t shift_timer;
-
-float song_shift_0[][2] = SONG(S__NOTE(_F3));
-float song_shift_1[][2] = SONG(S__NOTE(_G3));
-float song_shift_2[][2] = SONG(S__NOTE(_A3));
-float song_shift_3[][2] = SONG(S__NOTE(_B3),S__NOTE(_C4),S__NOTE(_D4));
-
-void exit_shifted_underscoring(void) {
-    if (shift_state == 0)
-        return;
-
-    PLAY_SONG(song_shift_0);
-    shift_state = 0;
-}
-
-bool process_shifted_underscoring(uint16_t keycode, keyrecord_t *record) {
-    // disabled for now.
-    return true;
-
-    switch (keycode) {
-        case KC_LSFT:
-            if (timer_elapsed(shift_timer) < 250)
-            {
-                if (record->event.pressed)
-                {
-                    shift_state++;
-                    switch (shift_state)
-                    {
-                        case 1:
-                            PLAY_SONG(song_shift_1);
-                            break;
-                        case 2:
-                            PLAY_SONG(song_shift_2);
-                            break;
-                        case 3:
-                            PLAY_SONG(song_shift_3);
-                            SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
-                            SEND_STRING(SS_TAP(X_UP));
-                            exit_shifted_underscoring();
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                // exiting on timer elapsed on pressed and released allows auto release on caps underscoring.
-                exit_shifted_underscoring();
-            }
-
-            if (record->event.pressed)
-                shift_timer = timer_read();
-            break;
-        case KC_SPC:
-            if (!record->event.pressed)
-                return true;
-
-            switch (shift_state)
-            {
-                case 1:
-                    tap_code16(KC_UNDS);
-                    return false;
-                case 2:
-                    tap_code16(KC_MINS);
-                    return false;
-            }
-            break;
-        case KC_BSPC:
-            break;
-        default:
-            // other keys should immediately cancel
-            if (record->event.pressed && (keycode < KC_A || keycode > KC_0))
-                exit_shifted_underscoring();
-            break;
-    }
-
-    return true;
-}
-
 bool process_macros(uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed)
         return true;
@@ -897,9 +817,6 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
-        // must be processed before grave to allow underscoring inside surround.
-        if (!process_shifted_underscoring(keycode, record)) return false;
-
         if (!process_right_shift(keycode, record)) return false;
 
         if (!process_grave_surround(keycode, record)) return false;
