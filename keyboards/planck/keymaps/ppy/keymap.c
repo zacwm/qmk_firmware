@@ -347,17 +347,18 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
             }
         }
 
-        /* if (last_was_number) */
-        /* { */
-        /*     switch (keycode) { */
-        /*         case KC_LBRC: */
-        /*             tap_code16(KC_COMM); */
-        /*             return false; */
-        /*         case KC_RBRC: */
-        /*             tap_code16(KC_DOT); */
-        /*             return false; */
-        /*     } */
-        /* } */
+        // When typing numbers, we usually want comma/period instead of angled brackets.
+        if (last_was_number)
+        {
+            switch (keycode) {
+                case KC_LT:
+                    tap_code16(KC_COMM);
+                    return false;
+                case KC_GT:
+                    tap_code16(KC_DOT);
+                    return false;
+            }
+        }
 
         // only upgrade from initial state. 2 is capturing
         if (symbol_consumed == 0)
