@@ -104,11 +104,11 @@ static int game_target = -1;
 // 2+ - consumed by special case
 static int symbol_consumed;
 
-// track the state of grave surround
+// track the state of backtick surround
 // 0 - not activated
 // 1 - started (cursor placed between ``)
 // 2 - consumed (success or revert)
-static int grave_surround_state;
+static int backtick_surround_state;
 
 static bool last_was_number;
 
@@ -166,9 +166,9 @@ bool process_game_specials(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-void grave_commit(void)
+void backtick_commit(void)
 {
-    switch (grave_surround_state)
+    switch (backtick_surround_state)
     {
         case 1:
             tap_code16(KC_RGHT);
@@ -181,10 +181,10 @@ void grave_commit(void)
             break;
     }
 
-    grave_surround_state = 0;
+    backtick_surround_state = 0;
 }
 
-bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
+bool process_backtick_surround(uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed)
         return true;
 
@@ -193,7 +193,7 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
     bool enter_via_lshift = keycode == KC_LSFT && mod_state & MOD_BIT(KC_RSFT);
     bool enter_via_rshift = keycode == KC_RSFT && mod_state & MOD_BIT(KC_LSFT);
 
-    switch (grave_surround_state)
+    switch (backtick_surround_state)
     {
         case 0:
             // enter via shift+shift
@@ -201,11 +201,11 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LSFT);
                 unregister_code(KC_RSFT);
 
-                // begin grave surround sequence.
+                // begin backtick surround sequence.
                 tap_code16(KC_GRV);
                 tap_code16(KC_GRV);
                 tap_code16(KC_LEFT);
-                grave_surround_state = 1;
+                backtick_surround_state = 1;
 
                 register_code(keycode == KC_LSFT ? KC_RSFT : KC_LSFT);
                 return true;
@@ -226,14 +226,14 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
                 case CTRL_ESC:
                     if (get_mods() == 0)
                         // exit via various commit keys
-                        grave_commit();
+                        backtick_commit();
                     break;
 
                 case KC_BSPC:
                     // only handle if not consumed (we might be backspacing within a surround).
-                    if (grave_surround_state == 1)
+                    if (backtick_surround_state == 1)
                     {
-                        grave_commit();
+                        backtick_commit();
                         return false;
                     }
 
@@ -241,12 +241,12 @@ bool process_grave_surround(uint16_t keycode, keyrecord_t *record) {
 
                 case KC_ENT:
                     // exit via enter
-                    grave_commit();
+                    backtick_commit();
                     return false;
 
                 default:
                     // or consume on any other key
-                    grave_surround_state = 2;
+                    backtick_surround_state = 2;
                     break;
             }
 
@@ -646,7 +646,7 @@ static int lsft_state;
 
 bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
     if (last_key_code == KC_RSFT)
-        // this should handle grave escape instead.
+        // this should handle backtick escape instead.
         return true;
 
     if (keycode == KC_LSFT)
@@ -689,7 +689,7 @@ static int rsft_state;
 
 bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
     if (last_key_code == KC_LSFT)
-        // this should handle grave escape instead.
+        // this should handle backtick escape instead.
         return true;
 
     if (keycode == KC_RSFT)
@@ -832,7 +832,7 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
 
         if (!process_nav_scln(keycode, record)) return false;
 
-        if (!process_grave_surround(keycode, record)) return false;
+        if (!process_backtick_surround(keycode, record)) return false;
         if (!process_record_vimlayer(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
     }
