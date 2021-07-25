@@ -13,14 +13,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_SYMBOL] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_MINS, KC_PERC, KC_CIRC, KC_EQL,  KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
-            _______, KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PIPE, KC_AMPR, KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
+            MEH,     KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PIPE, KC_AMPR, KC_UNDS, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     // Function keys, mouse emulation and less commonly used special keys.
     [_FKEYS] = LAYOUT_planck_grid(
             _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, _______, _______, _______, KC_WH_U, KC_DEL,
             KC_LCTL, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, KC_MS_L, KC_MS_D, KC_MS_U, KC_MS_R, KC_WH_D, _______,
-            _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, _______, _______, _______, _______, _______,
+            MEH,     KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, KC_BTN1, KC_BTN2, _______, _______, _______),
 
     // Loosely vim-based cursor and document navigation keys.
@@ -351,32 +351,57 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
             case KC_SPC:
                 if (symbol_consumed == 3)
                     unregister_code(KC_PGUP);
-                return false;
+                return true;
         }
     }
 
-    return true;
+return true;
+}
+
+void deactivate_meh(void) {
+    if (meh_activated == 0)
+        return;
+
+    unregister_code(KC_LCTL);
+    unregister_code(KC_LSFT);
+    unregister_code(KC_LALT);
+    layer_off(_MEH);
+
+    if (meh_activated == 1)
+        SEND_STRING(SS_LGUI(SS_TAP(X_C)));
+
+    meh_activated = 0;
 }
 
 bool process_meh(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
+        case SYMBOL:
+            // symbol+shift combination needs to activate regardless of order.
+            if (record->event.pressed)
+            {
+                if (get_mods() & MOD_BIT(KC_LSFT))
+                {
+                    // `redirect` to MEH
+                    meh_activated = 1;
+                    layer_move(_MEH);
+                    return false;
+                }
+            }
+            else
+            {
+                deactivate_meh();
+            }
+            break;
+
         case MEH:
         case RMEH:
             if (record->event.pressed) {
                 meh_activated = 1;
-                layer_on(_MEH);
+                layer_move(_MEH);
             }
             else
             {
-                unregister_code(KC_LCTL);
-                unregister_code(KC_LSFT);
-                unregister_code(KC_LALT);
-                layer_off(_MEH);
-
-                if (meh_activated == 1)
-                    SEND_STRING(SS_LGUI(SS_TAP(X_C)));
-
-                meh_activated = 0;
+                deactivate_meh();
             }
 
             return false;
@@ -822,6 +847,15 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
+    if (!(IS_GAME))
+    {
+        // delay shift down presses until next key.
+        if (!process_left_shift(keycode, record)) return false;
+        if (!process_right_shift(keycode, record)) return false;
+    }
+
+    if (!process_meh(keycode, record)) return false;
+
     if (!process_macros(keycode, record)) return false;
 
     if (!process_symbol_specials(keycode, record)) return false;
@@ -833,17 +867,12 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
-        if (!process_left_shift(keycode, record)) return false;
-        if (!process_right_shift(keycode, record)) return false;
-
         if (!process_nav_scln(keycode, record)) return false;
 
         if (!process_backtick_surround(keycode, record)) return false;
         if (!process_record_vimlayer(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
     }
-
-    if (!process_meh(keycode, record)) return false;
 
     return true;
 }
@@ -868,7 +897,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    state = update_tri_layer_state(state, _SYMBOL, _MEH, _ADJUST);
+    state = update_tri_layer_state(state, _SYMBOL, _FKEYS, _ADJUST);
 
     return state;
 }
