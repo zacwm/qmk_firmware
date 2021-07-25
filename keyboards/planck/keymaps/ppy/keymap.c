@@ -271,7 +271,7 @@ bool process_fkeys(uint16_t keycode, keyrecord_t *record) {
     }
     else
     {
-        if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 250)
+        if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 300)
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
 
         symbol_consumed = 0;
