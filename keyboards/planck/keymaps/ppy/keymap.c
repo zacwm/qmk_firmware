@@ -507,6 +507,7 @@ void unregister_nav_scln_down_state(void) {
 }
 
 bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
+    // handle toggle logic (and potential semicolon output).
     switch (keycode) {
         case NAV_SCLN:
             if (record->event.pressed) {
@@ -564,6 +565,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case TAB_R:
             unregister_nav_scln_down_state();
             semicolon_nav_activated = 2;
+
+            // actions for these are handled by the keys/macros temselves.
             return true;
 
         case KC_LEFT:
@@ -595,6 +598,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             return true;
 
         case KC_G:
+            // vim style home/end (change to cmd-down/up instead? home/end doesn't work great on apple OSes)
             if (get_mods() & MOD_BIT(KC_LSFT))
             {
                 unregister_code16(KC_LSFT);
@@ -625,6 +629,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             break;
     }
 
+    // if the nav layer doesn't have a specific action for the pressed key, we add a cmd modifier.
+    // this feels pretty good but may be a bit noisy/undefined.
     if (semicolon_nav_activated != 4 && semicolon_nav_activated != 2)
     {
         unregister_nav_scln_down_state();
@@ -756,6 +762,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             return false;
 
         case KC_W:
+            // todo: move to vim implementation
             if (IS_LAYER_ON(_VINSERT)) {
                 if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
                 {
@@ -772,6 +779,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_BSPC:
+            // ctrl-backspace maps to opt-backspace
             if (get_mods() & MOD_BIT(KC_LCTL))
             {
                 uint8_t mod_state = get_mods();
