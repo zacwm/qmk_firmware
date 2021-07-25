@@ -294,7 +294,7 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
             layer_off(_SYMBOL);
 
             if (symbol_consumed == 3)
-                unregister_code(KC_LSFT);
+                unregister_code(KC_PGUP);
         }
 
         return true;
@@ -347,13 +347,11 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
     }
     else
     {
-        if (symbol_consumed != 1)
-        {
-            switch (keycode) {
-                case KC_SPC:
+        switch (keycode) {
+            case KC_SPC:
+                if (symbol_consumed == 3)
                     unregister_code(KC_PGUP);
-                    return true;
-            }
+                return false;
         }
     }
 
