@@ -104,6 +104,18 @@ static int game_target = -1;
 // 2+ - consumed by special case
 static int symbol_consumed;
 
+// track the state of KC_LSFT
+// 0 - not activated
+// 1 - down, not consumed
+// 2 - down, consumed
+static int lsft_state;
+
+// track the state of KC_RSFT
+// 0 - not activated
+// 1 - down, not consumed
+// 2 - down, consumed
+static int rsft_state;
+
 // track the state of backtick surround
 // 0 - not activated
 // 1 - started (cursor placed between ``)
@@ -184,72 +196,60 @@ void backtick_commit(void)
     backtick_surround_state = 0;
 }
 
+void backtick_begin(void)
+{
+    if (backtick_surround_state != 0)
+        return;
+
+    // begin backtick surround sequence.
+    tap_code16(KC_GRV);
+    tap_code16(KC_GRV);
+    tap_code16(KC_LEFT);
+    backtick_surround_state = 1;
+}
+
 bool process_backtick_surround(uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed)
         return true;
 
-    uint8_t mod_state = get_mods();
+    // activation is handled in shift handling methods.
+    if (backtick_surround_state == 0)
+        return true;
 
-    bool enter_via_lshift = keycode == KC_LSFT && mod_state & MOD_BIT(KC_RSFT);
-    bool enter_via_rshift = keycode == KC_RSFT && mod_state & MOD_BIT(KC_LSFT);
+    switch (keycode) {
+        case KC_LSFT:
+        case KC_RSFT:
+        case KC_LCTL:
+            // don't consume symbol from keys that aren't meaninful.
+            break;
 
-    switch (backtick_surround_state)
-    {
-        case 0:
-            // enter via shift+shift
-            if (enter_via_lshift || enter_via_rshift) {
-                unregister_code(KC_LSFT);
-                unregister_code(KC_RSFT);
+        case KC_SPC:
+        case KC_ESC:
+        case KC_COMM:
+        case CTRL_ESC:
+            if (get_mods() == 0)
+                // exit via various commit keys
+                backtick_commit();
+            break;
 
-                // begin backtick surround sequence.
-                tap_code16(KC_GRV);
-                tap_code16(KC_GRV);
-                tap_code16(KC_LEFT);
-                backtick_surround_state = 1;
-
-                register_code(keycode == KC_LSFT ? KC_RSFT : KC_LSFT);
-                return true;
+        case KC_BSPC:
+            // only handle if not consumed (we might be backspacing within a surround).
+            if (backtick_surround_state == 1)
+            {
+                backtick_commit();
+                return false;
             }
 
             break;
+
+        case KC_ENT:
+            // exit via enter
+            backtick_commit();
+            return false;
+
         default:
-            switch (keycode) {
-                case KC_LSFT:
-                case KC_RSFT:
-                case KC_LCTL:
-                    // don't consume symbol from keys that aren't meaninful.
-                    break;
-
-                case KC_SPC:
-                case KC_ESC:
-                case KC_COMM:
-                case CTRL_ESC:
-                    if (get_mods() == 0)
-                        // exit via various commit keys
-                        backtick_commit();
-                    break;
-
-                case KC_BSPC:
-                    // only handle if not consumed (we might be backspacing within a surround).
-                    if (backtick_surround_state == 1)
-                    {
-                        backtick_commit();
-                        return false;
-                    }
-
-                    break;
-
-                case KC_ENT:
-                    // exit via enter
-                    backtick_commit();
-                    return false;
-
-                default:
-                    // or consume on any other key
-                    backtick_surround_state = 2;
-                    break;
-            }
-
+            // or consume on any other key
+            backtick_surround_state = 2;
             break;
     }
 
@@ -667,17 +667,7 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-// track the state of KC_LSFT
-// 0 - not activated
-// 1 - down, not consumed
-// 2 - down, consumed
-static int lsft_state;
-
 bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
-    if (last_key_code == KC_RSFT)
-        // this should handle backtick escape instead.
-        return true;
-
     if (keycode == KC_LSFT)
     {
         if (record->event.pressed)
@@ -690,18 +680,22 @@ bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
             }
 
             lsft_state = 1;
+
+            if (rsft_state == 1)
+                backtick_begin();
+
             // block this because it handles weird on iOS (left shift release also releases right shift MAKING_this-happen)
             return false;
         }
         else
         {
-            if (lsft_state == 1  && (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
+            if (lsft_state == 1 && backtick_surround_state != 1 && (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
                 tap_code16(KC_UNDS);
 
             lsft_state = 0;
         }
     }
-    else if (record->event.pressed && lsft_state == 1)
+    else if (keycode != KC_RSFT && record->event.pressed && lsft_state == 1)
     {
         register_code(KC_LSFT);
         lsft_state = 2;
@@ -710,17 +704,7 @@ bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-// track the state of KC_RSFT
-// 0 - not activated
-// 1 - down, not consumed
-// 2 - down, consumed
-static int rsft_state;
-
 bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
-    if (last_key_code == KC_LSFT)
-        // this should handle backtick escape instead.
-        return true;
-
     if (keycode == KC_RSFT)
     {
         if (record->event.pressed)
@@ -733,18 +717,22 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
             }
 
             rsft_state = 1;
+
+            if (lsft_state == 1)
+                backtick_begin();
+
             // block this because it handles weird on iOS (right shift release also releases left shift MAKING_this-happen)
             return false;
         }
         else
         {
-            if (rsft_state == 1  && (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
+            if (rsft_state == 1 && backtick_surround_state != 1 && (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
                 tap_code16(KC_MINS);
 
             rsft_state = 0;
         }
     }
-    else if (record->event.pressed && rsft_state == 1)
+    else if (keycode != KC_LSFT && record->event.pressed && rsft_state == 1)
     {
         register_code(KC_RSFT);
         rsft_state = 2;
@@ -852,6 +840,7 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
         // delay shift down presses until next key.
         if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
+        if (!process_backtick_surround(keycode, record)) return false;
     }
 
     if (!process_meh(keycode, record)) return false;
@@ -868,8 +857,6 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     if (!(IS_GAME))
     {
         if (!process_nav_scln(keycode, record)) return false;
-
-        if (!process_backtick_surround(keycode, record)) return false;
         if (!process_record_vimlayer(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
     }
