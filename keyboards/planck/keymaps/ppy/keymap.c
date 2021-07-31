@@ -599,7 +599,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
 
         case KC_LGUI:
         case KC_LSFT:
-        case KC_SPC:
             return true;
 
         case KC_G:
@@ -623,8 +622,9 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case CTRL_ESC:
+        case KC_SPC:
             // this handles cases like SCLN_NAV -> KC_ESC rapidly after a previous character.
-            if (semicolon_nav_activated == 1)
+            if (semicolon_nav_activated == 1 && timer_elapsed(last_key_time) < 500)
             {
                 tap_code16(KC_SCLN);
                 semicolon_nav_activated = 2;
