@@ -35,9 +35,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Left hand shifted one key further left than usual for WASD usage.
     [_GAME] = LAYOUT_planck_grid(
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_SCLN, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
-            _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, _______, _______, _______, XBX_IMG, XBX_MOV),
+            _______, KC_ESC,  _______, _______, KC_SPC,  _______, _______, _______, _______, _______, XBX_IMG, XBX_MOV),
 
     // Special macros accessible via MEH key (bottom-left corner key).
     // Undefined keys will get the standard MEH modifiers added.
