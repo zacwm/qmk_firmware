@@ -654,7 +654,7 @@ bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
         {
             if (get_mods() & MOD_BIT(KC_RSFT) || (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
             {
-                tap_code16(KC_UNDS);
+                register_code(KC_LSFT);
                 lsft_state = 2;
                 return false;
             }
@@ -669,9 +669,6 @@ bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
         }
         else
         {
-            if (lsft_state == 1 && backtick_surround_state != 1 && (last_key_code == KC_LSFT && timer_elapsed(last_key_time) < 250))
-                tap_code16(KC_UNDS);
-
             lsft_state = 0;
         }
     }
