@@ -601,18 +601,6 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
         case KC_LSFT:
             return true;
 
-        case KC_G:
-            // vim style home/end (change to cmd-down/up instead? home/end doesn't work great on apple OSes)
-            if (get_mods() & MOD_BIT(KC_LSFT))
-            {
-                unregister_code16(KC_LSFT);
-                tap_code16(KC_END);
-                register_code16(KC_LSFT);
-            }
-            else
-                tap_code16(KC_HOME);
-            return false;
-
         case KC_ENT:
             // enter only cmd enters if the first thing.
             // this is to allow things like selecting options from lists (using up/down).
