@@ -256,14 +256,14 @@ bool process_backtick_surround(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-bool process_fkeys(uint16_t keycode, keyrecord_t *record) {
-    if (keycode != FKEYS)
+bool process_del_word(uint16_t keycode, keyrecord_t *record) {
+    if (keycode != KC_LGUI)
         return true;
 
     // Pressing the FKEY key without another key will backspace one word (opt-backspace).
     if (record->event.pressed)
     {
-        if ((last_key_code == FKEYS || last_key_code == SYMBOL) && timer_elapsed(last_key_time) < 1000)
+        if (last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 1000)
         {
             symbol_consumed = 2;
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
@@ -271,7 +271,7 @@ bool process_fkeys(uint16_t keycode, keyrecord_t *record) {
     }
     else
     {
-        if (symbol_consumed == 0 && last_key_code == FKEYS && timer_elapsed(last_key_time) < 300)
+        if (symbol_consumed == 0 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 300)
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
 
         symbol_consumed = 0;
@@ -311,19 +311,9 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
         if (symbol_consumed != 1)
         {
             switch (keycode) {
-                case KC_LSFT:
-                case KC_RSFT:
-                    // don't consume symbol from keys that aren't meaninful.
-                    return true;
-
                 case KC_SPC:
                     register_code(KC_PGUP);
                     symbol_consumed = 3;
-                    return false;
-                // dead use case.
-                case KC_BSPC:
-                    SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-                    symbol_consumed = 2;
                     return false;
             }
         }
@@ -806,13 +796,13 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_symbol_specials(keycode, record)) return false;
 
-    // if (!process_fkeys(keycode, record)) return false;
-
     if (!process_game_specials(keycode, record)) return false;
 
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
+        if (!process_del_word(keycode, record)) return false;
+
         // delay shift down presses until next key.
         if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
