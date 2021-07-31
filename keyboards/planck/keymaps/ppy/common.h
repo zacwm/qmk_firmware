@@ -18,7 +18,7 @@ enum planck_keycodes {
     CTRL_ESC,
     NAV_SCLN,
     KVM_SWT,
-    COPY,
+    COPYADDR,
     SYMBOL,
     GAME,
     MEH,
@@ -39,6 +39,8 @@ enum planck_keycodes {
 #define TAB_L LCTL(LSFT(KC_TAB))
 #define TAB_R LCTL(KC_TAB)
 
+#define CUT   LGUI(KC_X)
+#define COPY  LGUI(KC_C)
 #define PASTE LGUI(KC_V)
 
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
