@@ -818,7 +818,7 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
 
     if (!process_symbol_specials(keycode, record)) return false;
 
-    if (!process_fkeys(keycode, record)) return false;
+    // if (!process_fkeys(keycode, record)) return false;
 
     if (!process_game_specials(keycode, record)) return false;
 
