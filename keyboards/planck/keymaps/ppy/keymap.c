@@ -124,6 +124,8 @@ static int backtick_surround_state;
 
 static bool last_was_number;
 
+static bool last_was_alpha;
+
 // sounds
 float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
 
@@ -263,16 +265,20 @@ bool process_del_word(uint16_t keycode, keyrecord_t *record) {
     // Pressing the FKEY key without another key will backspace one word (opt-backspace).
     if (record->event.pressed)
     {
-        if (last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 1000)
+        if ((last_key_code == KC_LGUI || last_was_alpha) && timer_elapsed(last_key_time) < 600)
         {
             symbol_consumed = 2;
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+            return true;
         }
     }
     else
     {
         if (symbol_consumed == 0 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 300)
+        {
+            unregister_code(KC_LGUI);
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
+        }
 
         symbol_consumed = 0;
     }
@@ -781,9 +787,12 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
             case KC_9:
             case KC_0:
                 last_was_number = true;
+                last_was_alpha = false;
                 break;
             default:
+                // todo: handle/allow shift as a modifier
                 last_was_number = false;
+                last_was_alpha = get_mods() == 0 && (keycode >= KC_A && keycode < KC_0);
                 break;
         }
     }
@@ -822,13 +831,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     if (record->event.pressed)
     {
-        switch (keycode)
-        {
-            default:
-                last_key_time = timer_read();
-                last_key_code = keycode;
-                break;
-        }
+        last_key_time = timer_read();
+        last_key_code = keycode;
     }
 
     update_last_was_number(keycode, record);
