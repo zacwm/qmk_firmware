@@ -104,6 +104,11 @@ static int game_target = -1;
 // 2+ - consumed by special case
 static int symbol_consumed;
 
+// 0  - not consumed
+// 1  - consumed by lgui
+// 2+ - consumed by del word
+static int del_word_consumed;
+
 // track the state of KC_LSFT
 // 0 - not activated
 // 1 - down, not consumed
@@ -267,20 +272,21 @@ bool process_del_word(uint16_t keycode, keyrecord_t *record) {
     {
         if ((last_key_code == KC_LGUI || last_was_alpha) && timer_elapsed(last_key_time) < 600)
         {
-            symbol_consumed = 2;
+            del_word_consumed = 2;
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-            return true;
         }
+        else
+            del_word_consumed = 1;
     }
     else
     {
-        if (symbol_consumed == 0 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 300)
+        if (del_word_consumed == 1 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 300)
         {
             unregister_code(KC_LGUI);
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
         }
 
-        symbol_consumed = 0;
+        del_word_consumed = 0;
     }
 
     return true;
