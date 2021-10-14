@@ -7,7 +7,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_LGUI, SYMBOL,  KC_SPC,  KC_ENT,  MEH,   KVM_SWT, COPYADDR,PASTE),
+            MEH,     KC_LCTL, KC_LALT, FKEYS,   KC_LGUI, SYMBOL,  KC_SPC,  KC_ENT,  RMEH,  KVM_SWT, COPYADDR,PASTE),
 
     // Every symbol required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
@@ -360,7 +360,7 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
 return true;
 }
 
-void deactivate_meh(void) {
+void deactivate_meh(uint16_t keycode) {
     if (meh_activated == 0)
         return;
 
@@ -370,7 +370,16 @@ void deactivate_meh(void) {
     layer_off(_MEH);
 
     if (meh_activated == 1)
-        SEND_STRING(SS_LGUI(SS_TAP(X_C)));
+    {
+        switch (keycode) {
+            case MEH:
+                SEND_STRING(SS_LGUI(SS_TAP(X_C)));
+                break;
+            case RMEH:
+                SEND_STRING(SS_LSFT(SS_LCTL(SS_LALT(SS_TAP(X_C)))));
+                break;
+        }
+    }
 
     meh_activated = 0;
 }
@@ -384,7 +393,7 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 layer_move(_MEH);
             }
             else
-                deactivate_meh();
+                deactivate_meh(keycode);
 
             return false;
         case KC_TAB:
