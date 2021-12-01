@@ -208,6 +208,9 @@ void backtick_begin(void)
     if (backtick_surround_state != 0)
         return;
 
+    // undo early register in lsft state 1.
+    unregister_code(KC_LSFT);
+
     // begin backtick surround sequence.
     tap_code16(KC_GRV);
     tap_code16(KC_GRV);
@@ -280,7 +283,7 @@ bool process_del_word(uint16_t keycode, keyrecord_t *record) {
     }
     else
     {
-        if (del_word_consumed == 1 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 300)
+        if (del_word_consumed == 1 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 150)
         {
             unregister_code(KC_LGUI);
             SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
@@ -658,12 +661,13 @@ bool process_left_shift(uint16_t keycode, keyrecord_t *record) {
                 return false;
             }
 
+            // TODO: next line may break: block this because it handles weird on iOS (left shift release also releases right shift MAKING_this-happen)
+            register_code(KC_LSFT);
             lsft_state = 1;
 
             if (rsft_state == 1)
                 backtick_begin();
 
-            // block this because it handles weird on iOS (left shift release also releases right shift MAKING_this-happen)
             return false;
         }
         else
@@ -685,7 +689,7 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            if (get_mods() & MOD_BIT(KC_LSFT) || (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
+            if (lsft_state == 2 || (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
             {
                 tap_code16(KC_MINS);
                 rsft_state = 2;
