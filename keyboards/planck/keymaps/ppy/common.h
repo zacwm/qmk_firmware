@@ -22,7 +22,7 @@ enum planck_keycodes {
     SYMBOL,
     GAME,
     MEH,
-    RMEH,
+    MEH_ENT,
     LOCK,
 };
 
