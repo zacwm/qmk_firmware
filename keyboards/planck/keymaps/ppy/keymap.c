@@ -104,11 +104,6 @@ static int game_target = -1;
 // 2+ - consumed by special case
 static int symbol_consumed;
 
-// 0  - not consumed
-// 1  - consumed by lgui
-// 2+ - consumed by del word
-static int del_word_consumed;
-
 // track the state of KC_LSFT
 // 0 - not activated
 // 1 - down, not consumed
@@ -261,35 +256,6 @@ bool process_backtick_surround(uint16_t keycode, keyrecord_t *record) {
             // or consume on any other key
             backtick_surround_state = 2;
             break;
-    }
-
-    return true;
-}
-
-bool process_del_word(uint16_t keycode, keyrecord_t *record) {
-    if (keycode != KC_LGUI)
-        return true;
-
-    // Pressing the FKEY key without another key will backspace one word (opt-backspace).
-    if (record->event.pressed)
-    {
-        if ((last_key_code == KC_LGUI || last_was_alpha) && timer_elapsed(last_key_time) < 600)
-        {
-            del_word_consumed = 2;
-            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-        }
-        else
-            del_word_consumed = 1;
-    }
-    else
-    {
-        if (del_word_consumed == 1 && last_key_code == KC_LGUI && timer_elapsed(last_key_time) < 150)
-        {
-            unregister_code(KC_LGUI);
-            SEND_STRING(SS_LALT(SS_TAP(X_BSPC)));
-        }
-
-        del_word_consumed = 0;
     }
 
     return true;
@@ -849,8 +815,6 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     // in game mode, all excess processing is skipped (mainly to avoid unwanted macro / helper triggers).
     if (!(IS_GAME))
     {
-        if (!process_del_word(keycode, record)) return false;
-
         // delay shift down presses until next key.
         if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
