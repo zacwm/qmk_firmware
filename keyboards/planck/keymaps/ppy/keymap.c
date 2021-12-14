@@ -453,7 +453,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
-                if (timer_elapsed(last_key_time) < 250)
+                if (timer_elapsed(last_key_time) < 200)
                 {
                     register_code(KC_ESC);
                     ctrl_escape_activated = 1;
