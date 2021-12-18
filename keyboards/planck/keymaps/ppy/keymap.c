@@ -9,7 +9,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
             MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  MEH_ENT, KC_LALT, KVM_SWT, COPYADDR,PASTE),
 
-    // Every symbol required for coding and every-day use.
+    // Every symbol and number required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_PERC, KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
@@ -837,6 +837,8 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+// For debounce and edge case purposes, track the last key timing, key code,
+// and whether it was a numeric character or not.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     bool retval = process_all_custom(keycode, record);
@@ -851,8 +853,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return retval;
 }
 
+// When holding both SYMBOL and FKEYS, the ADJUST layer will be accessible.
 layer_state_t layer_state_set_user(layer_state_t state) {
-    state = update_tri_layer_state(state, _SYMBOL, _FKEYS, _ADJUST);
-
-    return state;
+    return update_tri_layer_state(state, _SYMBOL, _FKEYS, _ADJUST);
 }
