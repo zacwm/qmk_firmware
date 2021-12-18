@@ -21,7 +21,7 @@ enum planck_keycodes {
     COPYADDR,
     SYMBOL,
     GAME,
-    MEH,
+    MD_CODE,
     MEH_ENT,
     LOCK,
 };

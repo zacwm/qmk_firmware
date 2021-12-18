@@ -7,7 +7,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            MEH,     KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  MEH_ENT, KC_LALT, KVM_SWT, COPYADDR,PASTE),
+            DEL_WRD, KC_LCTL, KC_LALT, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  MEH_ENT, KC_LALT, KVM_SWT, COPYADDR,PASTE),
 
     // Every symbol and number required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
@@ -42,7 +42,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Special macros accessible via MEH key (bottom-left corner key).
     // Undefined keys will get the standard MEH modifiers added.
     [_MEH] = LAYOUT_planck_grid(
-            _______, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+            MD_CODE, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
@@ -335,35 +335,7 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
         }
     }
 
-return true;
-}
-
-void deactivate_meh(uint16_t keycode) {
-    if (meh_activated == 0)
-        return;
-
-    layer_off(_MEH);
-
-    if (meh_activated == 1)
-    {
-        switch (keycode) {
-            case MEH:
-                SEND_STRING(SS_LGUI(SS_TAP(X_C)));
-                break;
-            case MEH_ENT:
-                tap_code16(KC_ENT);
-                break;
-        }
-    }
-    else
-    {
-        unregister_code(KC_LCTL);
-        unregister_code(KC_LSFT);
-        unregister_code(KC_LALT);
-        unregister_code(KC_ENT);
-    }
-
-    meh_activated = 0;
+    return true;
 }
 
 bool process_meh(uint16_t keycode, keyrecord_t *record) {
@@ -382,25 +354,33 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             else
-                deactivate_meh(keycode);
-
-            return false;
-        case MEH:
-            if (record->event.pressed) {
-                meh_activated = 1;
-                layer_move(_MEH);
-            }
-            else
-                deactivate_meh(keycode);
-
-            return false;
-        case KC_TAB:
-            if (record->event.pressed && meh_activated == 1)
             {
-                SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
-                SEND_STRING(SS_TAP(X_UP));
-                return false;
+                switch (meh_activated)
+                {
+                    case 1:
+                        tap_code16(KC_ENT);
+                        break;
+
+                    case 2:
+                        unregister_code(KC_LCTL);
+                        unregister_code(KC_LSFT);
+                        unregister_code(KC_LALT);
+                        break;
+
+                    case 3:
+                        unregister_code(KC_ENT);
+                        break;
+                }
+
+                layer_off(_MEH);
+                meh_activated = 0;
             }
+            return true;
+
+        case MD_CODE:
+        case LOCK:
+            meh_activated = 2;
+            // keys on the MEH layer we don't want to trigger MEH mode for.
             break;
 
         default:
@@ -413,21 +393,6 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
             }
 
             break;
-        case CAP_MOV:
-        case CAP_IMG:
-            // don't want these to trigger the down codes of MEH.
-            // bit ugly to have this here; probably need to rethink this logic.
-            meh_activated = 2;
-            break;
-        case LOCK:
-            if (record->event.pressed) {
-                // lock windows
-                SEND_STRING(SS_LGUI(SS_TAP(X_L)));
-                // lock macOS and turn off screen
-                SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
-            }
-            meh_activated = 2;
-            return false;
     }
 
     return true;
@@ -725,6 +690,18 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             SEND_STRING(SS_LGUI("lc"));
             tap_code16(KC_ESC);
             tap_code16(KC_ESC);
+            return false;
+
+        case LOCK:
+            // lock windows
+            SEND_STRING(SS_LGUI(SS_TAP(X_L)));
+            // lock macOS and turn off screen
+            SEND_STRING(SS_LCTL(SS_LGUI(SS_TAP(X_Q))));
+            return false;
+
+        case MD_CODE:
+            SEND_STRING("```csharp" SS_LSFT(SS_TAP(X_ENT)) SS_LSFT(SS_TAP(X_ENT)) "```");
+            SEND_STRING(SS_TAP(X_UP));
             return false;
 
         case KVM_SWT:

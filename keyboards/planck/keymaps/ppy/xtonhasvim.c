@@ -116,10 +116,8 @@ bool process_record_vimlayer(uint16_t keycode, keyrecord_t *record) {
         {
             switch (keycode)
             {
-                case KC_MEH:
                 case KC_LALT:
                 case KC_LGUI:
-                case MEH:
                     layer_clear();
                     PLAY_SONG(song_vim_off);
                     return true;
