@@ -8,12 +8,10 @@ enum planck_layers {
     _FKEYS,
     _ADJUST,
     _NAV,
-    _VIM,
-    _VINSERT,
 };
 
 enum planck_keycodes {
-    BASE = VIM_SAFE_RANGE,
+    QWERTY = SAFE_RANGE,
     BACKLIT,
     CTRL_ESC,
     NAV_SCLN,

@@ -1,5 +1,4 @@
 #include QMK_KEYBOARD_H
-#include "xtonhasvim.h"
 #include "common.h"
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -52,22 +51,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_ADJUST] = LAYOUT_planck_grid(
             _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
             _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, KC_LOCK,VIM_START,_______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
+            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
-
-    // xtonhasvim compatibility layer. VIM_ prefixes probably not required, along with this layer.
-    [_VIM] = LAYOUT_planck_grid(
-            _______, _______, VIM_W,   VIM_E,   VIM_R,   _______, VIM_Y,   VIM_U,   VIM_I,   VIM_O,   VIM_P,   _______,
-            VIM_ESC, VIM_A,   VIM_S,   VIM_D,   _______, VIM_G,   VIM_H,   VIM_J,   VIM_K,   VIM_L,   _______, _______,
-            VIM_SHIFT,_______,VIM_X,   VIM_C,   VIM_V,   VIM_B,   _______, _______, VIM_COMMA,VIM_PERIOD,_______,_______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
-
-    // xtonhasvim compatibility layer. Probably not required with some refactoring.
-    [_VINSERT] = LAYOUT_planck_grid(
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            VIM_ESC, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______)
 };
 
 // track the time of the last key input.
@@ -439,12 +424,6 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                     tap_code16(KC_ESC);
                 }
 
-                if (ctrl_escape_activated < 3)
-                {
-                    if (IS_LAYER_ON(_VINSERT))
-                        layer_move(_VIM);
-                }
-
                 ctrl_escape_activated = 0;
             }
 
@@ -726,23 +705,6 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
             set_game_mode(IS_GAME, false);
             return false;
 
-        case KC_W:
-            // todo: move to vim implementation
-            if (IS_LAYER_ON(_VINSERT)) {
-                if (get_mods() & MOD_BIT(KC_LCTL) && (get_mods() & MOD_BIT(KC_LALT)) == 0)
-                {
-                    unregister_code(KC_LCTL);
-
-                    register_code(KC_LALT);
-                    tap_code16(KC_BSPC);
-                    unregister_code(KC_LALT);
-
-                    register_code(KC_LCTL);
-                    return false;
-                }
-            }
-            break;
-
         case KC_BSPC:
             // ctrl-backspace maps to opt-backspace
             if (get_mods() & MOD_BIT(KC_LCTL))
@@ -807,7 +769,6 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
         if (!process_backtick_surround(keycode, record)) return false;
 
         if (!process_nav_scln(keycode, record)) return false;
-        if (!process_record_vimlayer(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
     }
 

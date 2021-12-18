@@ -1,5 +1,3 @@
-SRC += xtonhasvim.c
-
 COMMAND_ENABLE = no
 AUDIO_ENABLE = yes
 BACKLIGHT_ENABLE = yes
