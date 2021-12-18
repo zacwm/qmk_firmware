@@ -540,7 +540,7 @@ dxdy_t kinetic_step(const kinetic_t *what, axes_t *axes) {
 
     uint16_t maxs = (uint16_t)NORM_POSI(MK_KINETIC_EXPS, (uint24_t)what->maxs << exps);
     if (maxs > UINT8_MAX) maxs = UINT8_MAX;
-    int16_t maxs_dt = (int16_t)(maxs * dt); /* 12 bits */
+    int16_t maxs_dt = (int16_t)(maxs * dt * 2); /* 12 bits */
 
     uint8_t accn = cardinal(axes->dxdy, what->accn);
 
@@ -670,7 +670,7 @@ void mousekey_on(uint8_t code) {
 
 #if MK_KIND(MK_TYPE_KINETIC)
         case KC_MS_ACCEL0:
-            exps = MK_KINETIC_EXPS - 1; /* ½ maxs */
+            exps = MK_KINETIC_EXPS + 2; /* ½ maxs */
             break;
         case KC_MS_ACCEL1:
             if (exps > 1) exps--;
