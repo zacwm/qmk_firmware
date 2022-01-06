@@ -41,6 +41,8 @@ enum planck_keycodes {
 #define COPY  LGUI(KC_C)
 #define PASTE LGUI(KC_V)
 
+#define EMOJI LCTL(LGUI(KC_SPC))
+
 #define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
 #define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
 
