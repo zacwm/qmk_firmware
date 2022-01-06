@@ -707,7 +707,7 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
 
         case KC_BSPC:
             // ctrl-backspace maps to opt-backspace
-            if (get_mods() & MOD_BIT(KC_LCTL))
+            if (get_mods() == MOD_BIT(KC_LCTL))
             {
                 uint8_t mod_state = get_mods();
                 clear_mods();
