@@ -38,19 +38,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
             _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, KC_ENT,  _______, _______, XBX_IMG, XBX_MOV),
 
-    // Special macros accessible via MEH key (bottom-left corner key).
-    // Undefined keys will get the standard MEH modifiers added.
-    [_MEH] = LAYOUT_planck_grid(
-            MD_CODE, LOCK,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
-
     // Keyboard level commands.
     // Accessed via FKEY+SYMBOL keys.
     [_ADJUST] = LAYOUT_planck_grid(
-            _______, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
-            _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, _______, _______, _______,
+            MD_CODE, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, DM_PLY1, RESET,
+            _______, RGB_SAI, RGB_SAD, _______, _______, GAME,    _______, _______, _______, LOCK,    _______, _______,
             _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
             _______, _______, _______, _______, _______, _______, EMOJI,   _______, _______, _______, _______, _______),
 };
@@ -335,7 +327,6 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                 else
                 {
                     meh_activated = 1;
-                    layer_move(_MEH);
                 }
             }
             else
@@ -357,16 +348,9 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
                         break;
                 }
 
-                layer_off(_MEH);
                 meh_activated = 0;
             }
             return true;
-
-        case MD_CODE:
-        case LOCK:
-            meh_activated = 2;
-            // keys on the MEH layer we don't want to trigger MEH mode for.
-            break;
 
         default:
             if (record->event.pressed && meh_activated == 1)

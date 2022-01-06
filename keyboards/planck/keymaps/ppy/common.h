@@ -3,7 +3,6 @@
 enum planck_layers {
     _BASE,
     _SYMBOL,
-    _MEH,
     _GAME,
     _FKEYS,
     _ADJUST,
