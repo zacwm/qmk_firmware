@@ -387,7 +387,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
-                if (timer_elapsed(last_key_time) < 200)
+                if (timer_elapsed(last_key_time) < 200 && get_mods() == 0)
                 {
                     register_code(KC_ESC);
                     ctrl_escape_activated = 1;
@@ -418,7 +418,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
                 case 1:
                     // ctrl combo capture.
                     unregister_code(KC_ESC);
-                    register_code(KC_LCTL);
+                    // register_code(KC_LCTL);
                     ctrl_escape_activated = 3;
                     break;
                 case 2:
