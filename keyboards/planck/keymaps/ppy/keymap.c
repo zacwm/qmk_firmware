@@ -355,12 +355,19 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
             return true;
 
         default:
-            if (record->event.pressed && meh_activated == 1)
+            if (!record->event.pressed)
+                break;
+
+            switch (meh_activated)
             {
-                register_code(KC_LCTL);
-                register_code(KC_LSFT);
-                register_code(KC_LALT);
-                meh_activated = 2;
+                case 1:
+                case 3:
+                    unregister_code(KC_ENT);
+                    register_code(KC_LCTL);
+                    register_code(KC_LSFT);
+                    register_code(KC_LALT);
+                    meh_activated = 2;
+                    break;
             }
 
             break;
