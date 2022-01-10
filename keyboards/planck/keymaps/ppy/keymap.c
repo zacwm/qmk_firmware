@@ -225,8 +225,10 @@ bool process_backtick_surround(uint16_t keycode, keyrecord_t *record) {
             break;
 
         case KC_ENT:
+        case MEH_ENT:
             // exit via enter
             backtick_commit();
+            meh_activated = 3;
             return false;
 
         default:
@@ -736,6 +738,8 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
+    if (!process_backtick_surround(keycode, record)) return false;
+
     if (!process_meh(keycode, record)) return false;
 
     if (!process_macros(keycode, record)) return false;
@@ -750,7 +754,6 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
         // delay shift down presses until next key.
         if (!process_left_shift(keycode, record)) return false;
         if (!process_right_shift(keycode, record)) return false;
-        if (!process_backtick_surround(keycode, record)) return false;
 
         if (!process_nav_scln(keycode, record)) return false;
         if (!process_ctrl_esc(keycode, record)) return false;
