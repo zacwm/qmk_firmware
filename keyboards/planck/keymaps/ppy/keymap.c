@@ -6,7 +6,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC,
             CTRL_ESC,KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    NAV_SCLN,KC_QUOT,
             KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-            DEL_WRD, _______, _______, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  MEH_ENT, KC_LALT, KVM_SWT, COPYADDR,PASTE),
+            _______, _______, _______, KC_LGUI, FKEYS,   SYMBOL,  KC_SPC,  MEH_ENT, KC_LALT, _______, _______, _______),
 
     // Every symbol and number required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
@@ -20,10 +20,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, KC_F1,   KC_F2,   KC_F3,   KC_F4,   _______, _______, _______, KC_MS_U, _______, _______, KC_DEL,
             KC_LCTL, KC_F5,   KC_F6,   KC_F7,   KC_F8,   _______, KC_WH_D, KC_MS_L, KC_MS_D, KC_MS_R, KC_WH_U, _______,
             _______, KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______, KC_F13,  KC_F14,  KC_F15,  KC_F16,  _______,
-            _______, _______, _______, _______, _______, _______, KC_ACL0, KC_BTN1, KC_BTN2, _______, CAP_IMG, CAP_MOV),
+            _______, _______, _______, _______, _______, _______, KC_ACL0, KC_BTN1, KC_BTN2, _______, _______, _______),
 
     // Loosely vim-based cursor and document navigation keys.
     // Accessed by holding semicolon.
+    // Acts as cmd for any unbound keys.
     [_NAV] = LAYOUT_planck_grid(
             _______, _______, _______, WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
             _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
@@ -41,9 +42,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Keyboard level commands.
     // Accessed via FKEY+SYMBOL keys.
     [_ADJUST] = LAYOUT_planck_grid(
-            MD_CODE, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, _______, RESET,
-            _______, RGB_SAI, RGB_SAD, _______, DM_PLY1, GAME,    _______, _______, _______, LOCK,    CAP_IMG, CAP_MOV,
-            _______, _______, _______, KC_LOCK, _______, _______, _______, _______, CK_TOGG, CK_UP,   CK_DOWN, _______,
+            MD_CODE, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, _______, _______,
+            LOCK,    RGB_SAI, RGB_SAD, _______, DM_PLY1, GAME,    _______, _______, _______, _______, COPYADDR,PASTE,
+            RESET,   _______, _______, KC_LOCK, _______, _______, _______, _______, _______, KVM_SWT, CAP_IMG, CAP_MOV,
             _______, _______, _______, _______, _______, _______, EMOJI,   _______, _______, _______, _______, _______),
 };
 
