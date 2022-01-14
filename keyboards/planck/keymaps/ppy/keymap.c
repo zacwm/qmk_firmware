@@ -397,7 +397,7 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
-                if (timer_elapsed(last_key_time) < 200 && get_mods() == 0)
+                if (timer_elapsed(last_key_time) < 200 && get_mods() == 0 && (last_key_code == CTRL_ESC || last_was_alpha || last_was_number))
                 {
                     register_code(KC_ESC);
                     ctrl_escape_activated = 1;
@@ -423,18 +423,20 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
 
             return true;
         default:
-            switch (ctrl_escape_activated)
-            {
-                case 1:
-                    // ctrl combo capture.
-                    unregister_code(KC_ESC);
-                    // register_code(KC_LCTL);
-                    ctrl_escape_activated = 3;
-                    break;
-                case 2:
-                    // consumption.
-                    ctrl_escape_activated = 3;
-                    break;
+            if (record->event.pressed) {
+                switch (ctrl_escape_activated)
+                {
+                    case 1:
+                        // ctrl combo capture.
+                        unregister_code(KC_ESC);
+                        // register_code(KC_LCTL);
+                        ctrl_escape_activated = 3;
+                        break;
+                    case 2:
+                        // consumption.
+                        ctrl_escape_activated = 3;
+                        break;
+                }
             }
             break;
     }
@@ -722,6 +724,9 @@ bool process_macros(uint16_t keycode, keyrecord_t *record) {
 void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed)
     {
+        last_was_number = false;
+        last_was_alpha = false;
+
         switch (keycode) {
             case KC_1:
             case KC_2:
@@ -734,11 +739,14 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
             case KC_9:
             case KC_0:
                 last_was_number = true;
-                last_was_alpha = false;
+                break;
+            // not really "alpha" keys but counted as such for usages.
+            case NAV_SCLN:
+            case KC_SCLN:
+                last_was_alpha = true;
                 break;
             default:
                 // todo: handle/allow shift as a modifier
-                last_was_number = false;
                 last_was_alpha = get_mods() == 0 && (keycode >= KC_A && keycode < KC_0);
                 break;
         }
