@@ -104,6 +104,11 @@ static bool last_was_number;
 
 static bool last_was_alpha;
 
+// number of vim movement keys pressed in a row.
+static int vim_movement;
+
+static bool vim_insert;
+
 // sounds
 float song_kvm_setting[][2] = SONG(S__NOTE(_C5),S__NOTE(_C6),S__NOTE(_C7));
 
@@ -397,7 +402,21 @@ bool process_ctrl_esc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTRL_ESC:
             if (record->event.pressed) {
-                if (timer_elapsed(last_key_time) < 200 && get_mods() == 0 && (last_key_code == CTRL_ESC || last_was_alpha || last_was_number))
+                // okay this is getting a bit silly so you might ask "why not just split out into separate keys"
+                // well i'm not ready to do that yet, and the remaining complexity i'm adding here is to handle
+                // very edge cases.
+
+                // only immediate escape if the last keypress was quite recent..
+                if (timer_elapsed(last_key_time) < 200
+                        // ..and no modifiers are held..
+                        && get_mods() == 0
+                        // ..and either the last key was CTRL_ESC (two pressed in fast succession)..
+                        && (last_key_code == CTRL_ESC
+                        // ..or we are pretty sure that we're performing a vim normal move return.
+                        // - we haven't been 'jk'-ing for too long in a row
+                        // - we pressed 'i' more recently than 'esc'
+                        || (vim_movement < 2 && vim_insert))
+                   )
                 {
                     register_code(KC_ESC);
                     ctrl_escape_activated = 1;
@@ -726,6 +745,28 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
     {
         last_was_number = false;
         last_was_alpha = false;
+
+        // handle vim movement tracking
+        switch (keycode) {
+            case KC_H:
+            case KC_J:
+            case KC_K:
+            case KC_L:
+                last_was_alpha = true;
+                vim_movement++;
+                return;
+        }
+        vim_movement = 0;
+
+        switch (keycode) {
+            case KC_I:
+                vim_insert = true;
+                return;
+            case KC_ESC:
+            case CTRL_ESC:
+                vim_insert = false;
+                return;
+        }
 
         switch (keycode) {
             case KC_1:
