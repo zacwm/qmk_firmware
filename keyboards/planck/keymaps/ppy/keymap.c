@@ -11,8 +11,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Every symbol and number required for coding and every-day use.
     [_SYMBOL] = LAYOUT_planck_grid(
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
-            KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_PERC, KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
-            KC_PIPE, KC_EXLM, KC_AT,   KC_PLUS, KC_DLR,  KC_PIPE, KC_UNDS, KC_AMPR, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
+            KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_DLR,  KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
+            KC_PIPE, KC_EXLM, KC_AT,   KC_PLUS, KC_PERC, KC_COLN, KC_UNDS, KC_AMPR, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
             _______, _______, _______, _______, _______, _______, _______, KC_ENT,  _______, _______, _______, _______),
 
     // Function keys, mouse emulation and less commonly used special keys.
