@@ -13,7 +13,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    _______,
             KC_TILD, KC_LPRN, KC_RPRN, KC_HASH, KC_EQL,  KC_DLR,  KC_CIRC, KC_MINS, KC_ASTR, KC_LCBR, KC_RCBR, KC_LBRC,
             KC_PIPE, KC_EXLM, KC_AT,   KC_PLUS, KC_PERC, KC_COLN, KC_UNDS, KC_AMPR, KC_LT,   KC_GT,   KC_BSLS, KC_RBRC,
-            _______, _______, _______, _______, _______, _______, _______, KC_ENT,  _______, _______, _______, _______),
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     // Function keys, mouse emulation and less commonly used special keys.
     [_FKEYS] = LAYOUT_planck_grid(
@@ -29,7 +29,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, WORD_R,  _______, _______, _______, KC_PGUP, LINE_R,  LINE_L,  _______, _______,
             _______, _______, _______, KC_PGDN, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,
             _______, _______, CUT,     COPY,    PASTE,   WORD_L,  _______, _______, _______, _______, _______, _______,
-            _______, _______, _______, _______, _______, _______, _______, KC_ENT,  _______, _______, _______, _______),
+            _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______),
 
     // One-handed gaming layout.
     // Left hand shifted one key further left than usual for WASD usage.
@@ -37,7 +37,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
             KC_LCTL, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_SCLN, _______,
             _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LOCK,
-            _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, KC_ENT,  _______, _______, XBX_IMG, XBX_MOV),
+            _______, KC_ESC,  _______, FKEYS,   KC_SPC,  _______, _______, _______, _______, _______, XBX_IMG, XBX_MOV),
 
     // Keyboard level commands.
     // Accessed via FKEY+SYMBOL keys.
@@ -327,7 +327,7 @@ bool process_meh(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case MEH_ENT:
             if (record->event.pressed) {
-                if (timer_elapsed(last_key_time) < 200)
+                if (timer_elapsed(last_key_time) < 200 || get_highest_layer(layer_state) != _BASE)
                 {
                     register_code(KC_ENT);
                     meh_activated = 3;
@@ -795,12 +795,6 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
-    if (!process_backtick_surround(keycode, record)) return false;
-
-    if (!process_meh(keycode, record)) return false;
-
-    if (!process_macros(keycode, record)) return false;
-
     if (!process_symbol_specials(keycode, record)) return false;
 
     if (!process_game_specials(keycode, record)) return false;
@@ -813,6 +807,13 @@ bool process_all_custom(uint16_t keycode, keyrecord_t *record) {
         if (!process_right_shift(keycode, record)) return false;
 
         if (!process_nav_scln(keycode, record)) return false;
+
+        if (!process_backtick_surround(keycode, record)) return false;
+
+        if (!process_meh(keycode, record)) return false;
+
+        if (!process_macros(keycode, record)) return false;
+
         if (!process_ctrl_esc(keycode, record)) return false;
     }
 
