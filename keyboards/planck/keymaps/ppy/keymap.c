@@ -756,16 +756,19 @@ void update_last_was_number(uint16_t keycode, keyrecord_t *record) {
                 vim_movement++;
                 return;
         }
+
         vim_movement = 0;
 
         switch (keycode) {
             case KC_I:
+            case KC_O:
+            case KC_A:
                 vim_insert = true;
-                return;
+                break;
             case KC_ESC:
             case CTRL_ESC:
                 vim_insert = false;
-                return;
+                break;
         }
 
         switch (keycode) {
