@@ -556,6 +556,8 @@ bool process_nav_scln(uint16_t keycode, keyrecord_t *record) {
 
                 tap_code16(KC_TAB);
                 semicolon_nav_activated = 3;
+                // don't fire escape after usage. has to be handled here due to the blocking return.
+                ctrl_escape_activated = 3;
                 return false;
             }
             else
