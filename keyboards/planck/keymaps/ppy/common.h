@@ -42,8 +42,9 @@ enum planck_keycodes {
 
 #define EMOJI LCTL(LGUI(KC_SPC))
 
-#define CAP_IMG LGUI(LSFT(KC_4))        // Capture portion of screen
-#define CAP_MOV LGUI(LSFT(KC_5))        // Capture portion of screen
+#define CAP_LST LGUI(LSFT(KC_7))        // Capture last screen region
+#define CAP_IMG LGUI(LSFT(KC_6))        // Capture portion of screen
+#define CAP_MOV LGUI(LSFT(KC_5))        // Capture video of screen
 
 #define XBX_IMG LGUI(LALT(KC_PSCR))     // Capture portion of screen
-#define XBX_MOV LGUI(LALT(KC_G))        // Capture portion of screen
+#define XBX_MOV LGUI(LALT(KC_G))        // Capture last 30 seconds
