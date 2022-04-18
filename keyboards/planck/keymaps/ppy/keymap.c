@@ -43,7 +43,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // Accessed via FKEY+SYMBOL keys.
     [_ADJUST] = LAYOUT_planck_grid(
             MD_CODE, RGB_HUI, RGB_HUD, RGB_TOG, DM_REC1, _______, _______, _______, _______, _______, _______, _______,
-            LOCK,    RGB_SAI, RGB_SAD, _______, DM_PLY1, GAME,    _______, _______, _______, _______, CAP_IMG, CAP_MOV,
+            LOCK,    RGB_SAI, RGB_SAD, _______, DM_PLY1, GAME,    _______, _______, _______, CAP_LST, CAP_IMG, CAP_MOV,
             RESET,   _______, _______, KC_LOCK, _______, _______, _______, _______, _______, KVM_SWT, COPYADDR,PASTE,
             _______, _______, _______, _______, _______, _______, EMOJI,   _______, _______, _______, _______, _______),
 };
