@@ -482,7 +482,7 @@ static speed_t wheel = MK_3_SPEED_WHEEL;
 static uint16_t x11_unit(const x11_t *what, uint8_t repeat, uint8_t delta) {
     if (accel_state & MASK_ACCEL(KC_MS_ACCEL0)) {
 #    if MK_TYPE(MK_TYPE_X11)
-        return (uint16_t)((uint16_t)delta * what->max_speed) >> 2;
+        return (uint16_t)((uint16_t)delta * what->max_speed) >> 1;
 #    elif MK_TYPE(MK_TYPE_X11_COMBINED)
         return 1;
 #    endif
@@ -670,7 +670,7 @@ void mousekey_on(uint8_t code) {
 
 #if MK_KIND(MK_TYPE_KINETIC)
         case KC_MS_ACCEL0:
-            exps = MK_KINETIC_EXPS + 2; /* ½ maxs */
+            exps = MK_KINETIC_EXPS + 1; /* ½ maxs */
             break;
         case KC_MS_ACCEL1:
             if (exps > 1) exps--;
