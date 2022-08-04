@@ -303,6 +303,21 @@ bool process_symbol_specials(uint16_t keycode, keyrecord_t *record) {
             }
         }
 
+        if (symbol_consumed == 1)
+        {
+            switch (keycode) {
+                case MEH_ENT:
+                    if (last_key_code == KC_LT)
+                    {
+                        register_code(KC_LALT);
+                        tap_code16(KC_RGHT);
+                        unregister_code(KC_LALT);
+                        return false;
+                    }
+                    break;
+            }
+        }
+
         // only upgrade from initial state. 2 is capturing
         if (symbol_consumed == 0)
             symbol_consumed = 1;
