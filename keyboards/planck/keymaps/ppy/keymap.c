@@ -660,7 +660,9 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            if (lsft_state == 2 || (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
+            // UNDERSCORES_WHEN_LEFT_SHIFTING
+            // or dashes when typing quickly
+            if (lsft_state == 2 || timer_elapsed(last_key_time) < 250)
             {
                 tap_code16(KC_MINS);
                 rsft_state = 2;
