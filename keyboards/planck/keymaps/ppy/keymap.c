@@ -85,7 +85,7 @@ static int symbol_consumed;
 // track the state of KC_LSFT
 // 0 - not activated
 // 1 - down, not consumed
-// 2 - down, consumed
+// 2+ - consumed by special case
 static int lsft_state;
 
 // track the state of KC_RSFT
@@ -660,26 +660,32 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
     {
         if (record->event.pressed)
         {
-            // UNDERSCORES_WHEN_LEFT_SHIFTING
-            // or dashes when typing quickly
-            if (lsft_state == 2 || timer_elapsed(last_key_time) < 250)
+            if (lsft_state == 1)
             {
-                tap_code16(KC_MINS);
+                backtick_begin();
                 rsft_state = 2;
                 return false;
             }
 
-            rsft_state = 1;
+            // UNDERSCORES_WHEN_LEFT_SHIFTING
+            // or dashes when typing quickly
+            if (lsft_state == 2 || timer_elapsed(last_key_time) < 250)
+            {
+                register_code(KC_MINS);
+                rsft_state = 3;
+                return false;
+            }
 
-            if (lsft_state == 1)
-                backtick_begin();
+            rsft_state = 1;
 
             // block this because it handles weird on iOS (right shift release also releases left shift MAKING_this-happen)
             return false;
         }
         else
         {
-            if (rsft_state == 1 && backtick_surround_state != 1 && (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
+            if (rsft_state == 3)
+                unregister_code(KC_MINS);
+            else if (rsft_state == 1 && backtick_surround_state != 1 && (last_key_code == KC_RSFT && timer_elapsed(last_key_time) < 250))
                 tap_code16(KC_MINS);
 
             rsft_state = 0;
