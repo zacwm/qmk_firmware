@@ -669,7 +669,7 @@ bool process_right_shift(uint16_t keycode, keyrecord_t *record) {
 
             // UNDERSCORES_WHEN_LEFT_SHIFTING
             // or dashes when typing quickly
-            if (lsft_state == 2 || timer_elapsed(last_key_time) < 250)
+            // if (lsft_state == 2 || timer_elapsed(last_key_time) < 250)
             {
                 register_code(KC_MINS);
                 rsft_state = 3;
