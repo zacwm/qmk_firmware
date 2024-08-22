@@ -5,7 +5,7 @@ enum preonic_layers {
   _LOWER,
   _RAISE,
   _ADJUST,
-  _FKEYS
+  _FKEYS,
 };
 
 enum preonic_keycodes {
@@ -16,3 +16,6 @@ enum preonic_keycodes {
 };
 
 #define FKEYS MO(_FKEYS)
+#define LSFTF9 LSFT(KC_F9)
+#define LSFTF10 LSFT(KC_F10)
+#define CTRLF2 LCTL(KC_F2)
