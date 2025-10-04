@@ -20,7 +20,6 @@
 #include "os_detection.h"
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-
 /* Qwerty */
 [_QWERTY] = LAYOUT_preonic_grid(
   KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
@@ -65,24 +64,23 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
   _______, _______, _______, _______, _______, _______, _______, KC_BTN1, KC_BTN2, _______, _______, _______
 )
-
-
 };
 
 bool process_detected_host_os_kb(os_variant_t detected_os) {
-    if (!process_detected_host_os_user(detected_os)) {
-        return false;
-    }
-    switch (detected_os) {
-      case OS_MACOS:
-        keymap_config.swap_lctl_lgui = true;
-        break;
-      default:
-        keymap_config.swap_lctl_lgui = false;
-        break;
-    }
+  if (!process_detected_host_os_user(detected_os)) {
+    return false;
+  }
 
-    return true;
+  switch (detected_os) {
+    case OS_MACOS:
+      keymap_config.swap_lctl_lgui = true;
+      break;
+    default:
+      keymap_config.swap_lctl_lgui = false;
+      break;
+  }
+
+  return true;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -171,47 +169,47 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
       unregister_code(KC_PGUP);
     }
   }
-    return true;
+  return true;
 }
 
 bool dip_switch_update_user(uint8_t index, bool active) {
-    switch (index) {
-        case 0:
-            if (active) {
-                layer_on(_ADJUST);
-            } else {
-                layer_off(_ADJUST);
-            }
-            break;
-        case 1:
-            if (active) {
-                muse_mode = true;
-            } else {
-                muse_mode = false;
-            }
-    }
-    return true;
+  switch (index) {
+    case 0:
+      if (active) {
+        layer_on(_ADJUST);
+      } else {
+        layer_off(_ADJUST);
+      }
+      break;
+    case 1:
+      if (active) {
+        muse_mode = true;
+      } else {
+        muse_mode = false;
+      }
+  }
+  return true;
 }
 
 
 void matrix_scan_user(void) {
 #ifdef AUDIO_ENABLE
-    if (muse_mode) {
-        if (muse_counter == 0) {
-            uint8_t muse_note = muse_offset + SCALE[muse_clock_pulse()];
-            if (muse_note != last_muse_note) {
-                stop_note(compute_freq_for_midi_note(last_muse_note));
-                play_note(compute_freq_for_midi_note(muse_note), 0xF);
-                last_muse_note = muse_note;
-            }
-        }
-        muse_counter = (muse_counter + 1) % muse_tempo;
-    } else {
-        if (muse_counter) {
-            stop_all_notes();
-            muse_counter = 0;
-        }
+  if (muse_mode) {
+    if (muse_counter == 0) {
+      uint8_t muse_note = muse_offset + SCALE[muse_clock_pulse()];
+      if (muse_note != last_muse_note) {
+        stop_note(compute_freq_for_midi_note(last_muse_note));
+        play_note(compute_freq_for_midi_note(muse_note), 0xF);
+        last_muse_note = muse_note;
+      }
     }
+    muse_counter = (muse_counter + 1) % muse_tempo;
+  } else {
+    if (muse_counter) {
+      stop_all_notes();
+      muse_counter = 0;
+    }
+  }
 #endif
 }
 
